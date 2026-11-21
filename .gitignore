@@ -11,6 +11,11 @@ __pycache__/
 data/
 models/
 results/
+recordings/
+
+# Claude Code 개인 설정·훅 (일일 기록 자동 점검 등)
+.claude/settings.local.json
+.claude/hooks/
 
 # MediaPipe 모델 (README의 다운로드 명령으로 다시 받을 수 있음)
 assets/*.task

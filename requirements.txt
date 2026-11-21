@@ -5,5 +5,5 @@ numpy==2.4.6                  # 좌표·각도 계산
 pandas==2.3.3                 # 랜드마크 CSV 저장·읽기 (3.x는 Windows 스마트 앱 컨트롤에 DLL 차단됨)
 scikit-learn==1.9.1           # 경량 분류기(MLP, RF), GroupKFold, 정확도·F1
 scipy==1.17.1                 # 신뢰구간(t 분포)·Wilcoxon 검정 (evaluation.py에서 직접 import)
-matplotlib==3.11.2            # 혼동행렬 등 평가 그래프
+matplotlib==3.10.9            # 혼동행렬 등 평가 그래프
 pytest==9.2.0                 # 테스트 (python -m pytest -q)
