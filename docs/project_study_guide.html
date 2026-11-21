@@ -1,0 +1,584 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>프로젝트 이해 가이드</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+  :root {
+    --ink: #1b1f24; --muted: #5b6470; --line: #d6dbe1; --soft: #f3f5f8;
+    --accent: #1f5fbf; --accent-soft: #e8f0fc; --warn: #b35900; --warn-soft: #fff4e5;
+    --ok: #1e7a46; --ok-soft: #e7f5ec; --new: #7a3fb8; --new-soft: #f3ecfb;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: "Malgun Gothic", "맑은 고딕", sans-serif; color: var(--ink); background: #fff;
+         font-size: 10pt; line-height: 1.6; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 6px; letter-spacing: -0.5px; }
+  h2 { font-size: 15pt; margin: 0 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--accent); color: var(--accent); }
+  h3 { font-size: 11.5pt; margin: 16px 0 6px; }
+  h4 { font-size: 10.5pt; margin: 12px 0 4px; color: var(--muted); }
+  p { margin: 4px 0 8px; }
+  ul, ol { margin: 4px 0 8px; padding-left: 20px; }
+  li { margin: 2px 0; }
+  code { font-family: Consolas, "D2Coding", monospace; font-size: 9pt; background: var(--soft);
+         padding: 1px 4px; border-radius: 3px; }
+  pre { font-family: Consolas, monospace; font-size: 8.8pt; background: #1e2329; color: #e6e9ee;
+        padding: 9px 11px; border-radius: 6px; margin: 6px 0 10px; white-space: pre-wrap; line-height: 1.5;
+        page-break-inside: avoid; }
+  pre .c { color: #8fa1b3; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; font-size: 9.2pt; }
+  th, td { border: 1px solid var(--line); padding: 5px 7px; vertical-align: top; text-align: left; }
+  th { background: var(--soft); font-weight: 700; }
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  .flowsec { margin-top: 18px; }
+  table.cmd { table-layout: fixed; }
+  table.cmd code { word-break: break-all; white-space: normal; }
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: center; }
+  .cover .kicker { color: var(--accent); font-weight: 700; letter-spacing: 1px; font-size: 10pt; }
+  .cover .sub { font-size: 12.5pt; color: var(--muted); margin-bottom: 26px; }
+  .cover .meta td { border: none; padding: 3px 12px 3px 0; font-size: 10pt; }
+  .cover .meta td:first-child { color: var(--muted); width: 90px; }
+  .box { border: 1px solid var(--line); border-radius: 7px; padding: 9px 12px; margin: 8px 0 12px; page-break-inside: avoid; }
+  .why  { background: var(--accent-soft); border-color: #c4d7f5; }
+  .done { background: var(--ok-soft); border-color: #bfe3cc; }
+  .warn { background: var(--warn-soft); border-color: #f2d3a8; }
+  .newb { background: var(--new-soft); border-color: #dccbf0; }
+  .box .t { font-weight: 700; margin-bottom: 3px; display: block; }
+  .why .t { color: var(--accent); } .done .t { color: var(--ok); } .warn .t { color: var(--warn); } .newb .t { color: var(--new); }
+  .tag { display: inline-block; font-size: 8pt; font-weight: 700; padding: 0 6px; border-radius: 9px; margin-right: 3px; }
+  .tag.d { background: var(--ok-soft); color: var(--ok); }
+  .tag.p { background: var(--warn-soft); color: var(--warn); }
+  .tag.n { background: var(--soft); color: var(--muted); }
+  .tag.w { background: var(--new-soft); color: var(--new); }
+  .phase-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .phase-head .when { font-size: 9.5pt; color: var(--muted); font-weight: 400; }
+  .toc { font-size: 10.5pt; }
+  .toc td { border: none; border-bottom: 1px dotted var(--line); padding: 4px 6px; }
+  .toc .part td { font-weight: 700; color: var(--accent); border-bottom: 1px solid var(--accent); padding-top: 12px; }
+  .flow { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 9pt; margin: 8px 0 12px; }
+  .flow span { border: 1px solid var(--line); border-radius: 5px; padding: 4px 7px; background: var(--soft); }
+  .flow span.me { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
+  .flow b { color: var(--muted); }
+  .flow span span { border: none; background: none; padding: 0; color: inherit; opacity: .8; }
+  h2, h3, h4, .phase-head { break-after: avoid; page-break-after: avoid; }
+  tr, .box, pre, li { break-inside: avoid; }
+  .small { font-size: 8.8pt; color: var(--muted); }
+  .check li { list-style: none; margin-left: -16px; }
+  .check li::before { content: "☐ "; color: var(--muted); }
+</style>
+
+<style>
+  .script { border-left: 4px solid var(--accent); background: var(--accent-soft); padding: 9px 13px; margin: 8px 0 12px; border-radius: 0 7px 7px 0; page-break-inside: avoid; }
+  .script .who { font-size: 8.8pt; font-weight: 700; color: var(--accent); display: block; margin-bottom: 3px; }
+  .analogy { background: var(--new-soft); border: 1px solid #dccbf0; border-radius: 7px; padding: 8px 12px; margin: 8px 0 12px; page-break-inside: avoid; }
+  .analogy .t { color: var(--new); font-weight: 700; display: block; margin-bottom: 2px; }
+  .fig { text-align: center; margin: 8px 0 12px; page-break-inside: avoid; }
+  .fig .cap { font-size: 8.8pt; color: var(--muted); margin-top: 4px; }
+  .two { display: flex; gap: 14px; align-items: flex-start; }
+  .two > div { flex: 1; }
+  .qa dt { font-weight: 700; margin-top: 9px; }
+  .qa dt::before { content: "Q. "; color: var(--accent); }
+  .qa dd { margin: 3px 0 0 0; padding-left: 18px; }
+  .qa dd::before { content: "A. "; color: var(--ok); font-weight: 700; margin-left: -18px; }
+  .quiz li { margin: 6px 0; }
+  .lvl { display:inline-block; font-size:8pt; font-weight:700; padding:0 7px; border-radius:9px; background:var(--accent); color:#fff; margin-right:4px; }
+  .flow span.me { background: var(--accent); color: #fff; }
+</style>
+</head>
+<body>
+
+<!-- 표지 -->
+<section class="page cover">
+  <div class="kicker">THE-HAND · 7조 · 제스처 담당 학습용</div>
+  <h1>우리 프로젝트<br>이해하고 설명하기</h1>
+  <div class="sub">웹캠 하나로 손동작을 인식해 로봇팔을 조작하는 프로젝트와 그 안에서 내가 맡은 일</div>
+  <table class="meta">
+    <tr><td>과제명</td><td>비전 기반 손동작 인식을 활용한 소형 로봇 매니퓰레이터 실시간 비접촉 제어 시스템<br><span class="small">(기업 과제명: 손동작 인식 기반 소형 로봇 매니퓰레이터 비접촉 제어 시스템 개발 · KETI)</span></td></tr>
+    <tr><td>내 역할</td><td>제스처 판별 · 데이터 수집 · 성능 평가 (+ 실험 프로토콜, 전체 결과 정리)</td></tr>
+    <tr><td>기준일</td><td>2026-11-11 · 근거: 과제계획서 최종본, 멘토 피드백, 현재 코드</td></tr>
+  </table>
+  <div class="box why" style="margin-top:24px">
+    <span class="t">이 문서 쓰는 법</span>
+    <span class="lvl">1단계</span> 1장만 읽으면 30초~1분 설명이 됩니다.
+    <span class="lvl">2단계</span> 2~3장까지 읽으면 3분 설명과 팀 전체 그림이 됩니다.
+    <span class="lvl">3단계</span> 4~5장은 내 파트를 깊게 설명할 때 씁니다.
+    마지막에 <b>예상 질문, 퀴즈, 상황별 설명 대본</b>이 있습니다. 소리 내어 연습하면 가장 빨리 늡니다.
+  </div>
+</section>
+
+<!-- 목차 -->
+<section class="page">
+  <h2>목차</h2>
+  <table class="toc">
+    <tr class="part"><td colspan="2">1단계 · 짧게 설명하기</td></tr>
+    <tr><td>1</td><td>한 문장, 30초, 1분 설명</td></tr>
+    <tr class="part"><td colspan="2">2단계 · 전체 그림</td></tr>
+    <tr><td>2</td><td>왜 하는가: 해결하려는 문제</td></tr>
+    <tr><td>3</td><td>무엇을 만드는가: 시스템 구조와 조작 방식</td></tr>
+    <tr class="part"><td colspan="2">3단계 · 내 파트 깊게</td></tr>
+    <tr><td>4</td><td>제스처 판별은 어떻게 동작하나</td></tr>
+    <tr><td>5</td><td>성능은 어떻게 검증하나</td></tr>
+    <tr><td>6</td><td>지금 어디까지 왔고 앞으로 무엇을 하나</td></tr>
+    <tr class="part"><td colspan="2">연습</td></tr>
+    <tr><td>7</td><td>예상 질문과 답</td></tr>
+    <tr><td>8</td><td>상황별 설명 대본 (교수님 · 멘토 · 비전공 친구)</td></tr>
+    <tr><td>9</td><td>스스로 점검 퀴즈 (답은 맨 끝)</td></tr>
+    <tr><td>10</td><td>용어 사전</td></tr>
+  </table>
+</section>
+
+<!-- 1장 -->
+<section class="page">
+  <h2>1 · 짧게 설명하기</h2>
+
+  <h3>한 문장</h3>
+  <div class="script"><span class="who">핵심 한 줄</span>
+    <b>"비싼 장비 없이 일반 웹캠 하나로 손동작을 알아보고, 그대로 로봇팔을 움직이고 물건을 집게 하는 시스템을 만듭니다."</b>
+  </div>
+
+  <h3>30초 설명</h3>
+  <div class="script"><span class="who">처음 듣는 사람에게</span>
+    로봇팔을 조작하려면 보통 조이스틱이나 전용 조작 장치가 필요하고, 다루는 법도 따로 배워야 합니다.
+    저희는 웹캠 하나로 사람 손을 인식해서, 손을 움직이면 로봇팔이 따라 움직이고 손 모양을 바꾸면 집게가 열리고 닫히게 만들고 있습니다.
+    그냥 손을 움직였을 뿐인데 로봇이 움직이면 위험하니까, <b>특정 손 모양을 0.5초 유지해야 조작이 켜지는</b> 안전장치도 넣었습니다.
+  </div>
+
+  <h3>1분 설명 (내 역할 포함)</h3>
+  <div class="script"><span class="who">수업·멘토링 자리에서</span>
+    저희 팀은 KETI 기업 과제로, 웹캠 기반 비접촉 로봇팔 제어 시스템을 만들고 있습니다.
+    구조는 웹캠 → 손 추적 → 떨림 필터 → <b>제스처 판별</b> → 명령 생성 → 안전 감시 → 로봇 순서이고, 손동작 인식부와 로봇 제어부가 <code>/hand/state</code>라는 메시지 하나로 연결됩니다.<br>
+    저는 그중 <b>제스처 판별</b>을 맡았습니다. 그리퍼 열기·닫기, 조작 시작·정지(클러치), 높이 조절 모드를 손 모양으로 구분하는 부분입니다.
+    규칙 기반 방식과 학습 기반 분류기를 둘 다 만들어 비교하고, 직접 모은 손 데이터로 <b>정확도 95% 이상, 평소 동작에 잘못 켜지는 비율 5% 이하</b>를 목표로 검증합니다.
+    팀 차별점은 "가성비"라서, 저가 웹캠 환경에서도 이 성능이 나온다는 걸 보여 주는 것이 제 파트의 핵심입니다.
+  </div>
+
+  <h3>꼭 기억할 숫자 6개</h3>
+  <table>
+    <tr><th style="width:30%">숫자</th><th>의미</th></tr>
+    <tr><td><b>21</b>개 점</td><td>MediaPipe가 손 하나에서 찾는 관절 점 수</td></tr>
+    <tr><td><b>0.5</b>초</td><td>클러치 제스처를 이만큼 유지해야 조작이 켜지거나 꺼짐</td></tr>
+    <tr><td><b>95%</b> / <b>5%</b> / <b>10%</b></td><td>제스처 정확도 목표 / 오작동률 상한 / 활성화 실패율 상한</td></tr>
+    <tr><td><b>30</b> FPS, <b>5</b> ms</td><td>초당 처리 프레임 목표 / 제스처 판별 1회 시간 상한</td></tr>
+    <tr><td><b>250</b> ms</td><td>손을 움직인 뒤 로봇이 움직이기까지 목표 지연 (팀 전체 목표)</td></tr>
+    <tr><td><b>12/13</b></td><td>최종 제출 마감 (23:59)</td></tr>
+  </table>
+</section>
+
+<!-- 2장 -->
+<section class="page">
+  <h2>2 · 왜 하는가: 해결하려는 문제</h2>
+  <h3>2.1 문제 세 가지 (계획서 2.2)</h3>
+  <table>
+    <tr><th style="width:24%">문제</th><th>설명</th><th style="width:30%">우리의 대응</th></tr>
+    <tr><td>① 조작 장벽</td><td>기존 조작은 전용 장치와 로봇 좌표계 이해가 필요. "저기로 옮겨서 집기"를 축별 키 입력으로 바꿔야 함</td><td>손 움직임 그대로 로봇이 따라 움직임</td></tr>
+    <tr><td>② 비전의 불안정성과 깊이 한계</td><td>카메라로 찾은 손 좌표는 떨림·노이즈가 있고, 웹캠은 손이 카메라에서 얼마나 떨어졌는지(깊이)를 모름</td><td>떨림 필터, 높이를 별도 모드로 분리</td></tr>
+    <tr><td>③ 안전</td><td>조작할 생각 없이 손을 움직이거나 손이 화면을 벗어나면 로봇이 엉뚱하게 움직일 수 있음</td><td>클러치, 손 소실 시 일시정지, 4단계 안전 계층</td></tr>
+  </table>
+
+  <h3>2.2 기존 방식과 비교</h3>
+  <table>
+    <tr><th style="width:22%">방식</th><th>한계</th><th style="width:34%">우리 방식</th></tr>
+    <tr><td>티칭 펜던트, 조이스틱</td><td>별도 장치, 숙련 필요</td><td>웹캠만으로 조작</td></tr>
+    <tr><td>키보드 (제조사 예제)</td><td>축을 하나씩 조작해 느리고 직관성 낮음</td><td>평면 2축을 손 하나로 동시에</td></tr>
+    <tr><td>리더 암 (같은 로봇팔을 손으로 움직여 복제)</td><td>정밀하지만 전용 장치 추가, 로봇 근처에서만</td><td>범용 웹캠. 리더 암은 <b>성능 상한 비교 대상</b>(확장 실험)</td></tr>
+    <tr><td>데이터 장갑, VR 컨트롤러</td><td>비싸고 착용 불편</td><td>아무것도 착용하지 않음</td></tr>
+  </table>
+
+  <h3>2.3 선행 연구가 안 한 것 (우리가 채우는 공백)</h3>
+  <p>웹캠만으로 로봇팔을 조종한 연구는 이미 있습니다. 그래서 "가능한가?"가 아니라 <b>"제대로 검증했는가?"</b>가 우리 포인트입니다. 계획서 3.2가 꼽은 공백은 네 가지입니다.</p>
+  <ol>
+    <li><b>필터 선택 근거</b>: 기존 연구는 떨림 필터를 경험적으로 고정 → 우리는 같은 녹화에 여러 필터를 적용해 수치로 비교 (팀원A)</li>
+    <li><b>의도 인식의 오작동 평가</b>: 활성화 자세를 둔 연구도 평소 동작에 잘못 켜지는지는 안 잼 → <b>오작동률·활성화 실패율 측정 (제스처 담당)</b></li>
+    <li><b>안전 계층의 정지 성능</b>: 이상 상황에서 실제로 몇 초 만에 멈추는지 (팀원C)</li>
+    <li><b>기존 조작 방식과의 비교</b>: 키보드·리더 암과 성공률·시간 비교 (팀원C·전원)</li>
+  </ol>
+
+  <h3>2.4 팀 차별점: "가성비"</h3>
+  <p>사전발표에서 "목적이 불분명하다, 약점 하나에 집중하라"는 피드백을 받고, 3차 회의(11/7)에서 차별점을 <b>가성비</b>로 정했습니다. 멘토님도 11/10 메일에서 "고가 장비로 하던 기능을 일반 웹캠과 자체 알고리즘으로 구현하면 기업 입장에서 의미가 있다"고 동의했습니다.</p>
+  <div class="analogy"><span class="t">내 파트와의 연결</span>우리 웹캠(ZIO-C960)은 최대 30 FPS인 보급형입니다. 이 웹캠으로 <b>조명이 어둡거나 손 각도가 달라져도 판별이 유지된다</b>는 조건별 결과가, 가성비 주장을 뒷받침하는 직접적인 근거가 됩니다.</div>
+  
+</section>
+
+<!-- 3장 -->
+<section class="flowsec">
+  <h2>3 · 무엇을 만드는가</h2>
+  <h3>3.1 시스템 구조</h3>
+  <div class="flow">
+    <span>웹캠</span><b>→</b><span>손 추적<br><span class="small">MediaPipe 21점</span></span><b>→</b><span>떨림 필터</span><b>→</b>
+    <span class="me">제스처 판별<br>+ 클러치</span><b>→</b>
+    <span><code>/hand/state</code></span><b>→</b><span>명령 생성</span><b>→</b><span>안전 감시</span><b>→</b><span>로봇<br><span class="small">Gazebo / OMX-AI</span></span>
+  </div>
+  <table>
+    <tr><th style="width:18%">담당</th><th style="width:32%">하는 일</th><th>담당 지표</th></tr>
+    <tr><td>팀원A (팀장)</td><td>MediaPipe 손 좌표, 떨림 필터 비교</td><td>정지 시 흔들림 감소율, 필터 추가 지연</td></tr>
+    <tr><td><b>제스처 담당</b></td><td><b>제스처 판별, 데이터, 실험 프로토콜, 결과 정리</b></td><td><b>정확도·F1, 오작동률, 활성화 실패율</b></td></tr>
+    <tr><td>팀원B</td><td>ROS 2 명령 생성, 좌표 정합, 통합 총괄</td><td>종단 간 지연, 처리 지연, FPS</td></tr>
+    <tr><td>팀원C</td><td>Gazebo·OMX-AI 연동, 안전 기능</td><td>집어 옮기기 성공률, 비상정지 반응 시간</td></tr>
+  </table>
+  <p>인식부와 제어부는 <code>/hand/state</code> 메시지 <b>하나로만</b> 연결됩니다. 그래서 두 파트가 서로 기다리지 않고 따로 개발·테스트할 수 있습니다(멘토 조언: 입출력 형식을 먼저 합의). 실행 환경은 Ubuntu 24.04 + ROS 2 Jazzy + Gazebo Harmonic이고, 시뮬레이션에서 먼저 검증한 뒤 실물 OMX-AI로 옮깁니다.</p>
+
+  <h3>3.2 조작 방식 다섯 가지</h3>
+  <table>
+    <tr><th style="width:22%">기능</th><th>어떻게</th><th style="width:28%">왜 이렇게</th></tr>
+    <tr><td><b>클러치</b> (조작 켜기·끄기)</td><td>정해진 손 모양을 <b>0.5초 유지</b>하면 토글. 끄려는 손 모양이 보이는 즉시 로봇 위치를 고정하고, 0.5초가 확인되면 대기로</td><td>평소 손짓에 로봇이 반응하지 않게</td></tr>
+    <tr><td><b>상대 매핑</b></td><td>켜는 순간의 손·로봇 위치를 기준점으로, 이후 손이 움직인 양 × 배율만큼 로봇 이동</td><td>좁은 화면으로 넓은 작업 공간 조작</td></tr>
+    <tr><td><b>높이 모드</b></td><td>높이 제스처를 유지하는 동안 손을 위아래로 → 로봇 상하. 평면 이동은 고정</td><td>웹캠은 깊이를 모르므로 높이를 따로</td></tr>
+    <tr><td><b>그리퍼</b></td><td>손바닥 = 열림, 주먹 = 닫힘. 바뀌는 동안 위치 고정</td><td>집는 순간 위치가 흔들리지 않게</td></tr>
+    <tr><td><b>안전</b></td><td>손 소실·신뢰도 저하 → 일시정지, 재개는 클러치로. 원칙: <b>"판단이 애매하면 정지"</b></td><td>예외 상황 대비</td></tr>
+  </table>
+  <div class="two">
+    <div class="analogy"><span class="t">클러치 = 자동차 클러치</span>엔진(손 움직임)과 바퀴(로봇)를 연결하거나 끊는 장치입니다. 끊겨 있을 때는 손을 아무리 움직여도 로봇이 가만히 있습니다.</div>
+    <div class="analogy"><span class="t">상대 매핑 = 마우스</span>마우스가 책상 끝에 닿으면 들어서 가운데로 옮기고 다시 밀죠. 클러치를 껐다 켜면 손 위치를 다시 잡을 수 있습니다.</div>
+  </div>
+
+  <h3>3.3 안전 계층 4단계</h3>
+  <table>
+    <tr><th style="width:16%">단계</th><th>하는 일</th></tr>
+    <tr><td>인식</td><td>손 소실, 인식 신뢰도 저하, <code>/hand/state</code> 0.2초 끊김 → 일시정지 <span class="small">(내 상태 머신이 PAUSED로 일부 담당)</span></td></tr>
+    <tr><td>명령</td><td>작업 공간·관절 범위 제한, 이동량·속도 제한</td></tr>
+    <tr><td>로봇</td><td>명령이 0.2초 끊기면 로봇 쪽 워치독이 독립적으로 정지</td></tr>
+    <tr><td>물리</td><td>소프트웨어와 무관한 비상정지 스위치, 진행자가 옆에서 대기</td></tr>
+  </table>
+</section>
+
+<!-- 4장 -->
+<section class="page">
+  <h2>4 · 제스처 판별은 어떻게 동작하나</h2>
+  <p>한 프레임이 들어와서 <code>/hand/state</code>가 나가기까지 다섯 단계입니다. 코드 위치도 함께 적었습니다(코드 설명은 따로 진행).</p>
+  <div class="flow">
+    <span>① 손 21점<br><span class="small">camera.py</span></span><b>→</b><span>② 정규화·특징<br><span class="small">features.py</span></span><b>→</b><span>③ 판별<br><span class="small">rules.py / 분류기</span></span><b>→</b><span>④ 안정화·클러치<br><span class="small">state_machine.py</span></span><b>→</b><span>⑤ /hand/state<br><span class="small">pipeline.py</span></span>
+  </div>
+
+  <div class="two">
+    <div>
+      <h3>4.1 입력: 손 21개 점</h3>
+      <p>MediaPipe Hand Landmarker가 손마다 21개 점의 (x, y, z)를 줍니다. x, y는 화면 비율 좌표(0~1)이고, z는 손목 기준 상대 깊이라서 <b>카메라와 손 사이의 실제 거리는 알 수 없습니다</b>. 그래서 높이를 별도 모드로 나눴습니다.</p>
+      <p>번호 외울 것: <b>0 손목, 4 엄지 끝, 8 검지 끝, 12 중지 끝</b>. 파란 점(0·5·9·13·17번)의 평균이 로봇 위치 기준점입니다. 손가락을 오므려도 잘 안 변하기 때문입니다.</p>
+    </div>
+    <div class="fig">
+      <svg width="230" height="250" viewBox="0 0 200 240" role="img" aria-label="손 랜드마크 21개 점 배치도">
+        <g stroke="#9aa5b1" stroke-width="2" fill="none" stroke-linecap="round">
+          <polyline points="100,220 70,200 48,175 35,150 25,125"/>
+          <polyline points="100,220 72,140 66,100 62,75 58,50"/>
+          <polyline points="72,140 98,135 98,92 98,65 98,38"/>
+          <polyline points="98,135 122,140 126,100 129,76 132,54"/>
+          <polyline points="122,140 143,152 152,122 158,102 163,82"/>
+          <line x1="100" y1="220" x2="143" y2="152"/>
+        </g>
+        <g fill="#1f5fbf">
+          <circle cx="100" cy="220" r="6"/><circle cx="72" cy="140" r="6"/><circle cx="98" cy="135" r="6"/><circle cx="122" cy="140" r="6"/><circle cx="143" cy="152" r="6"/>
+        </g>
+        <g fill="#d14d2c">
+          <circle cx="70" cy="200" r="4"/><circle cx="48" cy="175" r="4"/><circle cx="35" cy="150" r="4"/><circle cx="25" cy="125" r="4"/>
+          <circle cx="66" cy="100" r="4"/><circle cx="62" cy="75" r="4"/><circle cx="58" cy="50" r="4"/>
+          <circle cx="98" cy="92" r="4"/><circle cx="98" cy="65" r="4"/><circle cx="98" cy="38" r="4"/>
+          <circle cx="126" cy="100" r="4"/><circle cx="129" cy="76" r="4"/><circle cx="132" cy="54" r="4"/>
+          <circle cx="152" cy="122" r="4"/><circle cx="158" cy="102" r="4"/><circle cx="163" cy="82" r="4"/>
+        </g>
+        <g font-size="10" font-family="Malgun Gothic, sans-serif" fill="#1b1f24" font-weight="700">
+          <text x="108" y="232">0 손목</text><text x="4" y="118">4</text><text x="50" y="42">8</text><text x="92" y="30">12</text><text x="128" y="46">16</text><text x="162" y="74">20</text>
+          <text x="54" y="146">5</text><text x="101" y="148">9</text><text x="125" y="155">13</text><text x="150" y="166">17</text>
+        </g>
+      </svg>
+      <div class="cap">파란 점 = 손바닥 기저부(위치 기준점) · 주황 점 = 손가락 관절</div>
+    </div>
+  </div>
+
+  <h3>4.2 정규화: 같은 모양이면 같은 숫자로</h3>
+  <p>같은 주먹이라도 화면 왼쪽에 있거나, 카메라에서 멀거나, 왼손이면 좌표 숫자가 전부 달라집니다. 판별기는 <b>"모양"만</b> 봐야 하므로 세 가지를 맞춥니다.</p>
+  <table>
+    <tr><th style="width:26%">처리</th><th>하는 일</th><th style="width:30%">없애는 차이</th></tr>
+    <tr><td>손목 원점</td><td>모든 점에서 손목(0번) 좌표를 뺌</td><td>화면 속 위치</td></tr>
+    <tr><td>손바닥 크기 정규화</td><td>손바닥 크기로 나눠 크기를 1로 맞춤</td><td>카메라와의 거리, 손 크기</td></tr>
+    <tr><td>왼손 좌우 반전</td><td>왼손을 뒤집어 오른손처럼</td><td>왼손·오른손 차이</td></tr>
+  </table>
+  <p>그다음 손가락 관절 각도를 계산합니다. 쭉 편 손가락은 관절이 거의 일직선(180°), 접으면 각도가 작아집니다. <b>정규화 좌표 + 관절 각도 = 특징 78차원</b>이 분류기의 입력입니다.</p>
+</section>
+
+<section class="page">
+  <h3>4.3 판별 방법 두 가지: 규칙 vs 학습</h3>
+  <div class="two">
+    <div>
+      <h4>규칙 기반 (기준선)</h4>
+      <p>손가락마다 관절 각도가 기준값보다 크면 펴짐(1), 작으면 접힘(0). 엄지~소지 5자리 패턴으로 제스처를 정합니다.</p>
+      <table>
+        <tr><th>제스처</th><th>패턴</th></tr>
+        <tr><td>손바닥 palm</td><td><code>11111</code></td></tr>
+        <tr><td>주먹 fist</td><td><code>00000</code></td></tr>
+        <tr><td>V자 peace</td><td><code>01100</code></td></tr>
+        <tr><td>샤카 call 🤙</td><td><code>10001</code></td></tr>
+        <tr><td>락 rock 🤘</td><td><code>01001</code></td></tr>
+        <tr><td>가리키기 one</td><td><code>01000</code></td></tr>
+      </table>
+      <p class="small">장점: 설명이 쉽고 데이터가 없어도 동작. 단점: 애매한 손, 사람마다 다른 손에 약함.</p>
+    </div>
+    <div>
+      <h4>학습 기반 분류기</h4>
+      <p>78차원 특징을 넣으면 제스처를 맞히도록 데이터로 학습시킨 모델입니다. 두 종류를 비교합니다.</p>
+      <ul>
+        <li><b>랜덤 포레스트</b>: 결정 트리 여러 개의 다수결</li>
+        <li><b>MLP</b>: 작은 신경망</li>
+      </ul>
+      <p>둘 다 <b>"none"(명령이 아닌 손)</b> 클래스도 함께 배워서, 평소 손 모양을 명령으로 오인하지 않게 합니다.</p>
+      <p class="small">계획서 원칙: 규칙을 기준선으로 두고, 데이터로 비교해 <b>더 나은 쪽을 실제 시스템에 적용</b>. 판별은 5ms 안에 끝나야 함.</p>
+    </div>
+  </div>
+  <div class="analogy"><span class="t">비유</span>규칙 기반은 "손가락 5개 중 몇 개가 펴졌나 세는 체크리스트", 분류기는 "많은 예시를 보고 감을 익힌 사람"입니다. 체크리스트는 이유를 설명하기 쉽고, 감을 익힌 사람은 애매한 경우에 강합니다.</div>
+
+  <h3>4.4 어떤 손 모양을 쓸지 정하는 논리</h3>
+  <p>핵심 아이디어는 <b>"다른 모양과 손가락이 몇 개 다른가"</b>입니다. 한 개만 다르면, 손가락 하나만 잘못 인식돼도 다른 제스처로 오판됩니다.</p>
+  <table>
+    <tr><th style="width:18%">기능</th><th style="width:20%">후보 (초안)</th><th>이유</th></tr>
+    <tr><td>그리퍼</td><td>손바닥 / 주먹</td><td>서로 5개 다 다름 → 가장 안정적. 흔한 모양이지만 클러치로 켠 뒤에만 의미가 있어 괜찮음</td></tr>
+    <tr><td>높이 모드</td><td>V자 (1순위)</td><td>엄지 척은 주먹과 1개(엄지)만 달라서 그리퍼 닫힘과 헷갈릴 위험 → 2순위</td></tr>
+    <tr><td>클러치</td><td>샤카 🤙 (1순위)<br>락 🤘, OK</td><td>꺼진 상태에서 감지되므로 <b>평소 동작과 멀어야 함</b>. 샤카는 손바닥·주먹·가리키기와 모두 2~3개 다름. 락은 가리키기와 1개 차이. <b>손바닥·주먹 같은 흔한 모양은 금지</b></td></tr>
+  </table>
+  <p>이건 아직 <b>초안</b>입니다. 계획서대로 평소 동작 데이터에서 실제로 잘못 켜지는 빈도를 비교해 확정합니다. 엄지 판정이 불안정하면 락이 올라올 수도 있습니다.</p>
+  <div class="analogy"><span class="t">"미다스의 손" 문제</span>만지는 것마다 금으로 바뀌는 왕처럼, 하는 동작마다 명령으로 받아들여지면 곤란합니다. 계획서가 인용한 개념(Jacob, 1990)으로, 클러치가 존재하는 이유입니다.</div>
+</section>
+
+<section class="page">
+  <h3>4.5 시간으로 안정화하고 상태를 관리하기</h3>
+  <p>프레임 하나하나의 판별은 가끔 틀립니다. 그래서 <b>"시간"</b>을 이용해 걸러 내고, 지금 어떤 모드인지를 <b>상태 머신</b>으로 관리합니다.</p>
+  <div class="fig">
+    <svg width="560" height="230" viewBox="0 0 560 230" role="img" aria-label="클러치 상태 전이도">
+      <defs><marker id="ar" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#5b6470"/></marker></defs>
+      <g font-family="Malgun Gothic, sans-serif">
+        <rect x="20" y="40" width="110" height="52" rx="10" fill="#f3f5f8" stroke="#5b6470"/>
+        <text x="75" y="63" text-anchor="middle" font-weight="700" font-size="13">IDLE</text><text x="75" y="81" text-anchor="middle" font-size="10" fill="#5b6470">대기 · 로봇 정지</text>
+        <rect x="225" y="40" width="110" height="52" rx="10" fill="#e8f0fc" stroke="#1f5fbf"/>
+        <text x="280" y="63" text-anchor="middle" font-weight="700" font-size="13" fill="#1f5fbf">PLANAR</text><text x="280" y="81" text-anchor="middle" font-size="10" fill="#5b6470">평면 이동 · 그리퍼</text>
+        <rect x="430" y="40" width="110" height="52" rx="10" fill="#e8f0fc" stroke="#1f5fbf"/>
+        <text x="485" y="63" text-anchor="middle" font-weight="700" font-size="13" fill="#1f5fbf">HEIGHT</text><text x="485" y="81" text-anchor="middle" font-size="10" fill="#5b6470">상하 이동</text>
+        <rect x="225" y="165" width="110" height="52" rx="10" fill="#fff4e5" stroke="#b35900"/>
+        <text x="280" y="188" text-anchor="middle" font-weight="700" font-size="13" fill="#b35900">PAUSED</text><text x="280" y="206" text-anchor="middle" font-size="10" fill="#5b6470">일시정지</text>
+        <g stroke="#5b6470" stroke-width="1.6" fill="none" marker-end="url(#ar)">
+          <path d="M130,56 L223,56"/><path d="M225,78 L132,78"/>
+          <path d="M335,56 L428,56"/><path d="M430,78 L337,78"/>
+          <path d="M262,92 L262,163"/><path d="M465,92 Q440,170 337,190"/>
+          <path d="M225,190 Q90,180 75,94"/>
+        </g>
+        <g font-size="10" fill="#1b1f24">
+          <text x="177" y="50" text-anchor="middle">클러치 0.5초</text><text x="177" y="94" text-anchor="middle">클러치 0.5초</text>
+          <text x="382" y="50" text-anchor="middle">V자 유지</text><text x="382" y="94" text-anchor="middle">V자 해제</text>
+          <text x="250" y="130" text-anchor="end">손 소실</text><text x="445" y="150">손 소실</text>
+          <text x="120" y="200">클러치 0.5초로 재개</text>
+        </g>
+      </g>
+    </svg>
+    <div class="cap">IDLE에서는 어떤 손 모양을 해도 로봇이 움직이지 않습니다. 켜는 방법은 클러치뿐입니다.</div>
+  </div>
+  <table>
+    <tr><th style="width:28%">장치</th><th>하는 일</th><th style="width:26%">값 (현재 코드)</th></tr>
+    <tr><td>연속 프레임 확인</td><td>같은 판별이 N프레임 연속일 때만 인정 → 한두 프레임 오인식 무시</td><td>3프레임 ≈ 0.1초 (계획서 "예: 5", 데이터로 결정)</td></tr>
+    <tr><td>클러치 유지 시간</td><td>0.5초 유지해야 켜짐·꺼짐</td><td>0.5초 ≈ 15프레임</td></tr>
+    <tr><td>끊김 허용</td><td>클러치 유지 중 아주 짧게 다른 판별이 끼어도 유지로 봄</td><td>0.15초. 없으면 가짜 데이터에서 활성화 실패율이 96%였음</td></tr>
+    <tr><td>즉시 위치 고정</td><td>켜진 상태에서 클러치 모양이 보이면 0.5초 전이라도 바로 hold</td><td>정지 의도가 늦게 반영되지 않게</td></tr>
+    <tr><td>재무장</td><td>한 번 전환한 뒤에는 손을 풀었다가 다시 해야 다음 전환</td><td>계속 유지해서 켜졌다 꺼졌다 반복하는 것 방지</td></tr>
+  </table>
+
+  <h3>4.6 출력: <code>/hand/state</code></h3>
+  <p>한 프레임마다(약 30 Hz) 아래 정보를 팀원B 노드로 보냅니다. 형식은 초안이라 팀 합의가 필요합니다(<code>docs/hand_state_format.md</code>).</p>
+  <table>
+    <tr><th style="width:28%">필드</th><th>내용</th></tr>
+    <tr><td>hand_detected, 신뢰도</td><td>손이 보이는가, 얼마나 확실한가</td></tr>
+    <tr><td>position</td><td>손 기준점(손바닥 기저부 평균) 화면 좌표</td></tr>
+    <tr><td>control_mode</td><td>IDLE / PLANAR / HEIGHT / PAUSED</td></tr>
+    <tr><td>hold_position</td><td>true면 명령 노드는 위치 고정</td></tr>
+    <tr><td>height_input</td><td>높이 모드에 들어간 순간 대비 손이 위아래로 움직인 양</td></tr>
+    <tr><td>gripper_state</td><td>열림 / 닫힘</td></tr>
+    <tr><td>stamp</td><td>카메라 캡처 시각 (지연 측정 기준)</td></tr>
+  </table>
+</section>
+
+<!-- 5장 -->
+<section class="page">
+  <h2>5 · 성능은 어떻게 검증하나</h2>
+  <h3>5.1 내 지표 네 가지</h3>
+  <table>
+    <tr><th style="width:20%">지표</th><th>질문</th><th>측정</th><th style="width:10%">목표</th></tr>
+    <tr><td>정확도·F1</td><td>손 모양을 맞게 알아보는가?</td><td>처음 보는 사람의 데이터로, 프레임 단위, 조명·각도 조건별</td><td>95%↑</td></tr>
+    <tr><td><b>오작동률</b></td><td>평소 동작에 잘못 켜지지 않는가?</td><td>물 마시기·머리 만지기·손 흔들기·휴대폰 보기·가리키기 5종 × 4회. 1회 동작 중 한 번이라도 켜지면 오작동 1건</td><td>5%↓</td></tr>
+    <tr><td><b>활성화 실패율</b></td><td>켜려고 할 때 잘 켜지는가?</td><td>일부러 클러치 10회. 3초 안에 안 켜지면 실패. 켜지기까지 시간도 기록</td><td>10%↓</td></tr>
+    <tr><td>판별 시간</td><td>충분히 빠른가?</td><td>프레임 1장 특징 추출 + 판별 시간</td><td>5ms 미만</td></tr>
+  </table>
+  <div class="analogy"><span class="t">오작동률과 활성화 실패율은 줄다리기</span>클러치를 까다롭게(오래 유지, 드문 모양) 만들면 오작동은 줄지만 켜기도 어려워집니다. 반대로 쉽게 만들면 잘 켜지지만 오작동이 늘어납니다. 그래서 <b>두 지표를 항상 같이</b> 봅니다.</div>
+
+  <h3>5.2 비교 기준(베이스라인)</h3>
+  <p>"우리 방법이 좋다"를 말하려면 비교 대상이 있어야 합니다.</p>
+  <ul>
+    <li><b>단순 활성화(손바닥 펴기 유지)</b> vs <b>설계한 클러치</b>: 손 흔들기는 손바닥 모양이라 단순 방식에서는 자주 잘못 켜질 것으로 예상됩니다. 이 차이가 클러치 설계의 효과입니다. (<code>evaluate.py --clutch palm</code>)</li>
+    <li><b>규칙 기반</b> vs <b>학습 분류기</b>: 같은 평가 데이터로 정확도와 오작동률을 비교합니다.</li>
+  </ul>
+
+  <h3>5.3 공정한 평가: 데이터 누수 막기</h3>
+  <p>가장 중요한 원칙은 <b>"학습에 쓴 사람으로 평가하지 않는다"</b>입니다.</p>
+  <div class="analogy"><span class="t">비유: 기출문제로 본 시험</span>시험 문제를 미리 풀어 본 학생이 높은 점수를 받아도 실력이라고 할 수 없습니다. 분류기도 이미 본 사람의 손으로 평가하면 점수가 부풀려집니다.</div>
+  <table>
+    <tr><th style="width:20%">그룹</th><th style="width:14%">인원</th><th>쓰임</th></tr>
+    <tr><td>팀원 (T)</td><td>4명</td><td>학습에만</td></tr>
+    <tr><td>선정·학습용 (S)</td><td>5명 이상</td><td>클러치 고르기, 분류기 학습</td></tr>
+    <tr><td>평가용 (E)</td><td>8명 (최소 6)</td><td><b>최종 지표에만</b>. 위 그룹과 겹치면 안 됨</td></tr>
+  </table>
+  <ul>
+    <li><b>GroupKFold</b>: 개발 중에는 "몇 명으로 학습 → 남은 사람으로 시험"을 사람을 바꿔 가며 반복해 평균을 냅니다. 같은 사람이 학습과 시험에 동시에 들어가지 않습니다.</li>
+    <li>클러치를 고르는 데 쓴 사람의 데이터도 최종 오작동률 평가에서 뺍니다. 고른 데이터로 다시 채점하면 유리하게 나오기 때문입니다.</li>
+    <li>사람 실험이라 IRB(연구윤리) 확인과 동의서가 필요하고, <b>영상은 저장하지 않고 손 좌표만</b> 저장합니다.</li>
+  </ul>
+
+  <h3>5.4 결과를 계산하는 방법</h3>
+  <p>비율은 <b>참여자별로 먼저 계산한 뒤 평균</b>을 냅니다. 같은 사람의 시도 20번은 서로 독립이 아니기 때문입니다(습관이 같음).</p>
+  <table>
+    <tr><th>예시</th><th>E01</th><th>E02</th><th>E03</th><th>결과</th></tr>
+    <tr><td>비조작 20회 중 잘못 켜짐</td><td>1회 → 5%</td><td>0회 → 0%</td><td>2회 → 10%</td><td>평균 <b>5%</b> + 95% 신뢰구간</td></tr>
+  </table>
+  <p><b>95% 신뢰구간</b>은 "진짜 값이 이 범위 안에 있을 가능성이 높다"는 범위입니다. 사람이 적거나 사람마다 결과가 들쭉날쭉하면 넓어집니다. 그래서 "5%"만 말하지 않고 "5% (95% CI 0~12%)"처럼 함께 보고합니다.</p>
+</section>
+
+<!-- 6장 -->
+<section class="flowsec">
+  <h2>6 · 지금 어디까지 왔고 앞으로 무엇을 하나</h2>
+  <h3>6.1 현재 상태 (11/11)</h3>
+  <table>
+    <tr><th style="width:30%">항목</th><th>상태</th></tr>
+    <tr><td>코드 (수집·특징·규칙·분류기·상태 머신·평가)</td><td>완성, 테스트 52개 통과. <b>가짜 데이터로만 검증</b> → 실제 손 데이터 필요</td></tr>
+    <tr><td>장비</td><td>ZIO-C960 웹캠, OMX-AI 로봇팔 1대 대여 완료. 삼각대·비상정지 스위치 필요</td></tr>
+    <tr><td>문서</td><td>/hand/state 형식·제스처 후보 초안, 실험 프로토콜·동의서 초안, 구현 계획 v2</td></tr>
+    <tr><td>팀 합의 대기</td><td>/hand/state 형식, IRB, 참여자 모집, 적용 분야</td></tr>
+  </table>
+  <h3>6.2 앞으로 (최종 제출 12/13 23:59)</h3>
+  <table>
+    <tr><th style="width:20%">주차</th><th>할 일</th></tr>
+    <tr><td>11주차 (~11/16)</td><td>웹캠 확인, 규칙 튜닝, 팀원 데이터 수집, IRB·참여자 문제 정리</td></tr>
+    <tr><td>12주차 (~11/23)</td><td>선정·학습용 수집, 클러치·높이 확정, 분류기 선정, 실시간 데모</td></tr>
+    <tr><td>13주차 (~11/30)</td><td>ROS 2 노드 연동, 파일럿 실험, 실험용 버전 확정</td></tr>
+    <tr><td>14주차 (~12/7)</td><td>평가 참여자 실험</td></tr>
+    <tr><td>15주차 (~12/13)</td><td>분석, 2차 멘토링(12/11 이전), 보고서 제출</td></tr>
+  </table>
+  <div class="box warn"><span class="t">솔직하게 말해야 할 한계</span>
+    · 아직 실제 사람 데이터가 없습니다. 지금까지의 숫자는 가짜 데이터라 의미가 없습니다.<br>
+    · ZIO 웹캠은 최대 30 FPS라 계획서 권장(60 FPS)에는 못 미칩니다. 그래서 판별을 빠르게(5ms 미만) 유지하는 것이 중요합니다.<br>
+    · 외부 참여자 모집과 IRB가 늦어지면 팀원만으로 실험하고, 그 한계를 결과에 밝혀야 합니다.</div>
+</section>
+
+<!-- 7장 -->
+<section class="page">
+  <h2>7 · 예상 질문과 답</h2>
+  <dl class="qa">
+    <dt>어디에 쓰려는 건가요? (적용 분야)</dt>
+    <dd>멘토님과 교수님 모두 "비접촉이 실제로 필요한 상황"(사람이 만지기 꺼리거나 손이 닿기 어려운 물체)을 구체화하라고 하셨습니다. 후보는 일상 보조(거동이 불편한 분께 물건 가져다주기), 원격 현장 작업, 오락(인형뽑기)이고 팀에서 확정 중입니다.</dd>
+    <dt>그냥 손바닥 펴면 켜지게 하면 안 되나요?</dt>
+    <dd>손바닥은 손 흔들기·인사처럼 평소에 너무 자주 나오는 모양이라 잘못 켜질 위험이 큽니다. 그래서 일부러 흔하지 않은 모양을 고르고, 손바닥 방식은 <b>비교 기준</b>으로 두어 실제로 얼마나 차이 나는지 측정합니다.</dd>
+    <dt>규칙만으로 충분하지 않나요? 왜 분류기까지?</dt>
+    <dd>규칙을 기준선으로 두고, 평소 손 모양(none)까지 함께 학습한 분류기와 비교해 더 나은 쪽을 씁니다. 규칙이 충분하면 규칙을 쓰는 것도 결과입니다.</dd>
+    <dt>데이터가 너무 적지 않나요?</dt>
+    <dd>이미지가 아니라 손 좌표 78개 숫자를 쓰는 가벼운 모델이라 적은 데이터로도 학습할 수 있습니다. 공개 데이터셋 HaGRID의 관련 제스처와 "제스처 없음" 클래스로 보강할 계획입니다.</dd>
+    <dt>앞뒤 거리는 웹캠으로 어떻게 알아요?</dt>
+    <dd>알 수 없습니다. 그래서 화면 좌우·상하 이동은 로봇의 좌우·전후로, 높이는 별도 높이 모드에서의 상하 이동으로 나눴습니다. 손 크기로 거리를 추정하는 방법도 있지만 손을 기울이거나 오므리면 값이 변해서 그리퍼 동작과 간섭합니다.</dd>
+    <dt>판별이 깜빡이면요?</dt>
+    <dd>같은 판별이 연속 몇 프레임 이어질 때만 인정하고, 클러치는 0.5초 유지해야 하며, 확신이 낮으면 "모름"으로 처리합니다. 원칙은 "애매하면 정지"입니다.</dd>
+    <dt>손이 여러 개 잡히면요?</dt>
+    <dd>계획서상 조작을 켠 손의 좌우와 직전 위치를 기억해 그 손만 따라가고, 없으면 일시정지합니다. 이 부분은 아직 구현 예정입니다(지금은 손 하나만 인식).</dd>
+    <dt>개인정보는요?</dt>
+    <dd>영상은 저장하지 않고 손 관절 좌표 숫자만 저장합니다. 데이터에는 이름 대신 참여자 번호만 쓰고, 촬영 전 동의를 받으며 IRB 심의 여부를 확인합니다.</dd>
+    <dt>정확도 95%, 오작동 5%는 현실적인가요?</dt>
+    <dd>초기 목표이고, 계획서에 기준선 측정 결과에 따라 조정할 수 있다고 명시했습니다. 중요한 건 기준선 대비 얼마나 개선했는지입니다.</dd>
+    <dt>기존 연구와 뭐가 다른가요?</dt>
+    <dd>웹캠으로 로봇팔을 조종한 연구는 있지만, 필터 선택 근거, 평소 동작에 대한 오작동 평가, 안전 계층의 정지 성능, 기존 조작 방식과의 비교가 빠져 있었습니다. 저희는 이 네 가지를 수치로 검증합니다. 제 파트는 그중 오작동 평가입니다.</dd>
+    <dt>왜 LLM은 안 쓰나요?</dt>
+    <dd>과제 범위에서 필요성이 크지 않다고 팀에서 판단했고, 멘토님도 역할과 필요성을 검토하라고 하셨습니다. AI 요소는 학습 기반 제스처 분류기로 구체화했습니다.</dd>
+    <dt>판별이 얼마나 빨라요?</dt>
+    <dd>목표는 프레임당 5ms 미만입니다. 가짜 데이터 측정에서 MLP는 약 0.2ms, 랜덤 포레스트는 약 7.5ms라 실제 데이터로 다시 재서 고를 예정입니다.</dd>
+    <dt>모르는 질문을 받으면?</dt>
+    <dd>"그 부분은 [팀원A/팀원B/팀원C] 담당이라 답변 부탁드려도 될까요?" 또는 "확인해서 정리해 드리겠습니다."</dd>
+  </dl>
+</section>
+
+<!-- 8장 -->
+<section class="page">
+  <h2>8 · 상황별 설명 대본</h2>
+  <div class="script"><span class="who">비전공 친구에게 (30초)</span>
+    웹캠으로 손을 찍으면 로봇팔이 내 손을 따라 움직이는 걸 만들고 있어. 손을 펴면 집게가 열리고 주먹 쥐면 닫혀.
+    근데 아무 때나 따라 움직이면 위험하니까, 🤙 이렇게 특정 손 모양을 잠깐 유지해야 켜지게 했어.
+    나는 그 손 모양을 컴퓨터가 정확히 알아보게 하고, 실제로 얼마나 잘 되는지 사람들 데리고 실험하는 걸 맡았어.
+  </div>
+  <div class="script"><span class="who">교수님·심사위원에게 (1분, 문제 → 방법 → 검증)</span>
+    로봇팔 조작은 전용 장치와 숙련이 필요하다는 문제가 있습니다. 저희는 일반 웹캠 하나로 손동작을 인식해 로봇팔을 제어하는 시스템을 만들고, 고가 장비 없이도 쓸 만한 성능이 나오는지를 정량적으로 검증합니다.
+    제 담당은 제스처 판별입니다. 손 관절 21개 좌표를 위치·크기와 무관하게 정규화하고, 규칙 기반과 학습 기반 분류기를 비교합니다.
+    특히 평소 동작에 로봇이 켜지는 문제를 막기 위해 흔하지 않은 손 모양을 0.5초 유지해야 켜지는 클러치를 두었고,
+    손바닥 유지 방식을 기준선으로 해서 오작동률과 활성화 실패율을, 학습에 쓰지 않은 참여자 데이터로 측정합니다.
+  </div>
+  <div class="script"><span class="who">KETI 멘토님께 (진행 보고, 기술 중심)</span>
+    제스처 판별 모듈은 MediaPipe Tasks API 기반으로 수집·특징 추출·규칙 판별·분류기 비교·클러치 상태 머신·평가 스크립트까지 구현했고, 지금은 실제 웹캠 데이터로 임계값을 튜닝하는 단계입니다.
+    상태 머신은 연속 프레임 확인과 0.5초 유지, 짧은 끊김 허용으로 안정화하고, 정지 후보가 보이면 즉시 위치를 고정합니다.
+    출력은 <code>/hand/state</code> 하나로 제어부와 연결되도록 형식을 제안했습니다.
+    웹캠이 30 FPS 상한이라 프레임 간격 33ms를 지연 예산에 반영하고 있고, 판별 시간을 5ms 안으로 유지하려고 합니다.
+  </div>
+  <div class="box why"><span class="t">설명 잘하는 요령</span>
+    ① <b>문제부터</b> 말하기 ("~가 어렵다 → 그래서 ~를 만든다") ② 숫자는 <b>목표와 함께</b> ("오작동 5% 이하가 목표") ③ 비유 하나 쓰기 (클러치, 마우스) ④ 내 파트와 팀 전체를 <b>구분해서</b> 말하기 ⑤ 모르면 담당자에게 넘기기
+  </div>
+</section>
+
+<!-- 9장 -->
+<section class="page">
+  <h2>9 · 스스로 점검 퀴즈</h2>
+  <p>답을 보기 전에 소리 내어 답해 보세요. 7개 이상 맞으면 설명할 준비가 된 겁니다.</p>
+  <ol class="quiz">
+    <li>우리 프로젝트를 한 문장으로 말하면?</li>
+    <li>웹캠으로는 왜 손의 앞뒤 거리를 알기 어렵고, 우리는 어떻게 대응했나?</li>
+    <li>클러치가 없으면 어떤 문제가 생기나? 클러치를 켜려면 무엇을 해야 하나?</li>
+    <li>클러치로 손바닥이나 주먹을 쓰면 안 되는 이유는?</li>
+    <li>정규화 세 가지와 각각 없애는 차이는?</li>
+    <li>로봇 위치 기준점을 손가락 끝이 아니라 손바닥 기저부로 잡는 이유는?</li>
+    <li>오작동률과 활성화 실패율은 각각 무엇을 재고, 왜 같이 봐야 하나?</li>
+    <li>"학습에 쓴 사람으로 평가하지 않는다"는 원칙이 필요한 이유는?</li>
+    <li>비율을 참여자별로 먼저 계산하고 평균을 내는 이유는?</li>
+    <li>손동작 인식부와 로봇 제어부는 무엇으로 연결되고, 그렇게 하면 무엇이 좋은가?</li>
+    <li>우리 팀의 차별점은 무엇이고, 내 파트는 그걸 어떻게 뒷받침하나?</li>
+    <li>손이 화면에서 사라지면 시스템은 어떻게 되나? 다시 조작하려면?</li>
+  </ol>
+
+  <h2 style="margin-top:22px">10 · 용어 사전</h2>
+  <table>
+    <tr><th style="width:22%">용어</th><th>뜻</th></tr>
+    <tr><td>매니퓰레이터</td><td>로봇팔. 우리는 ROBOTIS OMX-AI (5자유도 + 그리퍼)</td></tr>
+    <tr><td>그리퍼</td><td>로봇팔 끝의 집게</td></tr>
+    <tr><td>MediaPipe</td><td>구글의 손 인식 도구. 손마다 관절 점 21개를 찾아 줌</td></tr>
+    <tr><td>랜드마크</td><td>MediaPipe가 찾은 손 관절 점</td></tr>
+    <tr><td>클러치</td><td>조작을 켜고 끄는 손 모양. 0.5초 유지로 토글</td></tr>
+    <tr><td>비조작 동작</td><td>조작할 생각 없이 하는 평소 동작 (물 마시기 등)</td></tr>
+    <tr><td>상태 머신</td><td>지금 모드와 모드가 바뀌는 조건을 정해 둔 구조</td></tr>
+    <tr><td>베이스라인</td><td>"우리 방법이 더 낫다"를 보이기 위한 비교 기준</td></tr>
+    <tr><td>F1</td><td>놓친 것(재현율)과 잘못 잡은 것(정밀도)을 함께 반영한 점수</td></tr>
+    <tr><td>데이터 누수</td><td>평가 데이터의 정보가 학습에 섞여 점수가 부풀려지는 것</td></tr>
+    <tr><td>ROS 2</td><td>로봇 프로그램끼리 메시지를 주고받게 해 주는 프레임워크. 노드(프로그램)와 토픽(통로)</td></tr>
+    <tr><td>Gazebo / RViz</td><td>로봇 시뮬레이터 / 시각화 도구</td></tr>
+    <tr><td>FPS</td><td>1초에 처리하는 영상 장수. 30 FPS면 33ms마다 한 장</td></tr>
+    <tr><td>종단 간 지연</td><td>손이 움직인 순간부터 로봇이 움직이기 시작할 때까지 시간</td></tr>
+    <tr><td>IRB</td><td>사람 대상 연구의 윤리 심의 위원회</td></tr>
+  </table>
+</section>
+
+<section class="page">
+  <h2>퀴즈 답</h2>
+  <ol class="quiz">
+    <li>비싼 장비 없이 일반 웹캠 하나로 손동작을 인식해 로봇팔을 움직이고 물건을 집게 하는 시스템.</li>
+    <li>웹캠은 평면 영상이고 MediaPipe의 z는 손목 기준 상대값이라 실제 거리를 모름. 화면 좌우·상하 → 로봇 좌우·전후, 높이는 별도 높이 모드(V자 유지 중 손 상하)로 분리.</li>
+    <li>조작할 생각 없이 손을 움직여도 로봇이 따라 움직임(미다스의 손 문제). 정해진 클러치 손 모양을 0.5초 유지해야 켜짐.</li>
+    <li>손 흔들기·물건 잡기처럼 평소에 너무 자주 나오는 모양이라 잘못 켜질 위험이 큼. 그리고 이미 그리퍼(열림·닫힘)로 쓰고 있음.</li>
+    <li>손목 원점(화면 속 위치), 손바닥 크기 정규화(거리·손 크기), 왼손 좌우 반전(왼손·오른손).</li>
+    <li>손가락을 오므리거나 펼 때(그리퍼 조작) 손가락 끝은 크게 움직이지만 손바닥 기저부는 거의 안 움직여서, 집는 순간 로봇 위치가 흔들리지 않음.</li>
+    <li>오작동률 = 평소 동작에 잘못 켜지는 비율, 활성화 실패율 = 켜려고 할 때 3초 안에 못 켜는 비율. 하나를 줄이면 다른 하나가 늘기 쉬운 줄다리기 관계라서.</li>
+    <li>이미 본 사람의 손으로 채점하면 점수가 부풀려짐(기출문제로 본 시험). 처음 보는 사람에게도 통하는지 알아야 함.</li>
+    <li>같은 사람의 시도는 습관이 같아 서로 독립이 아님. 한 사람이 결과를 좌우하지 않도록 사람 단위로 계산.</li>
+    <li><code>/hand/state</code> 메시지 하나. 입출력 형식만 맞추면 두 파트가 따로 개발·테스트할 수 있음.</li>
+    <li>가성비(저가 웹캠 + 소프트웨어). 저가 웹캠(30 FPS)과 조명·각도가 달라지는 조건에서도 판별 성능이 유지된다는 조건별 결과로 뒷받침.</li>
+    <li>조작 중이었다면 PAUSED(일시정지)가 되고 로봇은 현재 위치를 유지. 다시 조작하려면 클러치를 0.5초 유지해야 함.</li>
+  </ol>
+  <div class="box done" style="margin-top:14px"><span class="t">다음 단계</span>이 문서로 전체 그림을 익힌 뒤, 코드 설명 세션에서 4장의 각 단계가 실제 코드에서 어떻게 구현됐는지(<code>features.py</code> → <code>rules.py</code> → <code>state_machine.py</code> → <code>evaluation.py</code>)를 같이 봅니다.</div>
+  <p class="small" style="margin-top:12px">이 문서는 Claude(Anthropic)로 과제계획서·멘토 피드백·현재 코드를 바탕으로 학습용으로 정리했습니다. 내용은 제스처 담당이 검토합니다. (과목 AI 활용 표기 규정에 따른 기록)</p>
+</section>
+
+</body>
+</html>

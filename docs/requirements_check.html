@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>요구사항 대조 점검</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+  :root {
+    --ink: #1b1f24; --muted: #5b6470; --line: #d6dbe1; --soft: #f3f5f8;
+    --accent: #1f5fbf; --accent-soft: #e8f0fc; --warn: #b35900; --warn-soft: #fff4e5;
+    --ok: #1e7a46; --ok-soft: #e7f5ec; --new: #7a3fb8; --new-soft: #f3ecfb;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: "Malgun Gothic", "맑은 고딕", sans-serif; color: var(--ink); background: #fff;
+         font-size: 10pt; line-height: 1.6; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 6px; letter-spacing: -0.5px; }
+  h2 { font-size: 15pt; margin: 0 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--accent); color: var(--accent); }
+  h3 { font-size: 11.5pt; margin: 16px 0 6px; }
+  h4 { font-size: 10.5pt; margin: 12px 0 4px; color: var(--muted); }
+  p { margin: 4px 0 8px; }
+  ul, ol { margin: 4px 0 8px; padding-left: 20px; }
+  li { margin: 2px 0; }
+  code { font-family: Consolas, "D2Coding", monospace; font-size: 9pt; background: var(--soft);
+         padding: 1px 4px; border-radius: 3px; }
+  pre { font-family: Consolas, monospace; font-size: 8.8pt; background: #1e2329; color: #e6e9ee;
+        padding: 9px 11px; border-radius: 6px; margin: 6px 0 10px; white-space: pre-wrap; line-height: 1.5;
+        page-break-inside: avoid; }
+  pre .c { color: #8fa1b3; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; font-size: 9.2pt; }
+  th, td { border: 1px solid var(--line); padding: 5px 7px; vertical-align: top; text-align: left; }
+  th { background: var(--soft); font-weight: 700; }
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  .flowsec { margin-top: 18px; }
+  table.cmd { table-layout: fixed; }
+  table.cmd code { word-break: break-all; white-space: normal; }
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: center; }
+  .cover .kicker { color: var(--accent); font-weight: 700; letter-spacing: 1px; font-size: 10pt; }
+  .cover .sub { font-size: 12.5pt; color: var(--muted); margin-bottom: 26px; }
+  .cover .meta td { border: none; padding: 3px 12px 3px 0; font-size: 10pt; }
+  .cover .meta td:first-child { color: var(--muted); width: 90px; }
+  .box { border: 1px solid var(--line); border-radius: 7px; padding: 9px 12px; margin: 8px 0 12px; page-break-inside: avoid; }
+  .why  { background: var(--accent-soft); border-color: #c4d7f5; }
+  .done { background: var(--ok-soft); border-color: #bfe3cc; }
+  .warn { background: var(--warn-soft); border-color: #f2d3a8; }
+  .newb { background: var(--new-soft); border-color: #dccbf0; }
+  .box .t { font-weight: 700; margin-bottom: 3px; display: block; }
+  .why .t { color: var(--accent); } .done .t { color: var(--ok); } .warn .t { color: var(--warn); } .newb .t { color: var(--new); }
+  .tag { display: inline-block; font-size: 8pt; font-weight: 700; padding: 0 6px; border-radius: 9px; margin-right: 3px; }
+  .tag.d { background: var(--ok-soft); color: var(--ok); }
+  .tag.p { background: var(--warn-soft); color: var(--warn); }
+  .tag.n { background: var(--soft); color: var(--muted); }
+  .tag.w { background: var(--new-soft); color: var(--new); }
+  .phase-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .phase-head .when { font-size: 9.5pt; color: var(--muted); font-weight: 400; }
+  .toc { font-size: 10.5pt; }
+  .toc td { border: none; border-bottom: 1px dotted var(--line); padding: 4px 6px; }
+  .toc .part td { font-weight: 700; color: var(--accent); border-bottom: 1px solid var(--accent); padding-top: 12px; }
+  .flow { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 9pt; margin: 8px 0 12px; }
+  .flow span { border: 1px solid var(--line); border-radius: 5px; padding: 4px 7px; background: var(--soft); }
+  .flow span.me { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
+  .flow b { color: var(--muted); }
+  .flow span span { border: none; background: none; padding: 0; color: inherit; opacity: .8; }
+  h2, h3, h4, .phase-head { break-after: avoid; page-break-after: avoid; }
+  tr, .box, pre, li { break-inside: avoid; }
+  .small { font-size: 8.8pt; color: var(--muted); }
+  .check li { list-style: none; margin-left: -16px; }
+  .check li::before { content: "☐ "; color: var(--muted); }
+</style>
+
+<style>
+  .s { display:inline-block; font-size:8pt; font-weight:700; padding:0 6px; border-radius:9px; white-space:nowrap; }
+  .s.ok { background:var(--ok-soft); color:var(--ok); }
+  .s.pt { background:var(--warn-soft); color:var(--warn); }
+  .s.no { background:#fde8e8; color:#b42318; }
+  .s.tm { background:var(--soft); color:var(--muted); }
+  td.c { text-align:center; width:9%; }
+  .num { font-weight:700; color:var(--accent); }
+  .kpi { display:flex; gap:8px; margin:8px 0 12px; }
+  .kpi div { flex:1; border:1px solid var(--line); border-radius:7px; padding:8px 10px; text-align:center; }
+  .kpi b { display:block; font-size:18pt; line-height:1.2; }
+  .kpi span { font-size:8.5pt; color:var(--muted); }
+  .kpi .k1 b { color:var(--ok); } .kpi .k2 b { color:var(--warn); } .kpi .k3 b { color:#b42318; } .kpi .k4 b { color:var(--muted); }
+  .phase-head { break-inside: avoid; page-break-inside: avoid; }
+</style>
+</head>
+<body>
+
+<!-- 표지 -->
+<section class="page cover">
+  <div class="kicker">THE-HAND · 7조 · 제스처 판별 담당</div>
+  <h1>요구사항 대조 점검 및<br>수정 구현 계획 (v2)</h1>
+  <div class="sub">P-실무 폴더 자료 32개를 기준으로 구현 계획 v1을 다시 점검한 결과</div>
+  <table class="meta">
+    <tr><td>대상</td><td>docs/implementation_plan.pdf (v1, 2026-11-11)</td></tr>
+    <tr><td>기준 자료</td><td>과제계획서 최종본, 공지사항·메일, 멘토 회신 3건, 멘토링·회의록, 팀 카톡(9/21~11/10), 개인 준비 자료, 코드 분석 문서, 사전발표 자료</td></tr>
+    <tr><td>점검일</td><td>2026-11-11 (11주차)</td></tr>
+    <tr><td>문서 구성</td><td>1부 점검 결과 → 2부 수정 계획 v2 (새 일정 + 추가 작업 가이드) → 3부 팀·외부 확인 사항</td></tr>
+  </table>
+  <div class="box warn" style="margin-top:26px">
+    <span class="t">결론 먼저</span>
+    v1은 <b>제스처 판별 모듈을 만드는 일</b>은 대부분 다뤘지만, 계획서가 내 몫으로 정한 <b>실험 프로토콜 설계, 외부 참여자 13명 데이터, 베이스라인 비교, HaGRID 보강, 전체 성능 결과 정리</b>가 빠져 있었습니다.
+    과목 공지의 <b>AI 활용 내역 작성 의무</b>도 반영되지 않았습니다. 또 최종 제출 마감이 <b>12/13(일) 23:59</b>라서, 계획서 일정(16주차 보고서)보다 실험과 분석을 앞당겨야 합니다.
+  </div>
+</section>
+
+<!-- 목차 -->
+<section class="page">
+  <h2>목차</h2>
+  <table class="toc">
+    <tr class="part"><td colspan="2">1부 · 점검 결과</td></tr>
+    <tr><td>1.1</td><td>읽은 자료와 점검 방법</td></tr>
+    <tr><td>1.2</td><td>한눈에 보는 결과</td></tr>
+    <tr><td>1.3</td><td>과제계획서: 내 담당 요구사항 대조</td></tr>
+    <tr><td>1.4</td><td>과제계획서: 공통 업무(실험 프로토콜·결과 정리) 대조</td></tr>
+    <tr><td>1.5</td><td>공지사항·과목 규정 대조</td></tr>
+    <tr><td>1.6</td><td>멘토 피드백·사전발표 피드백 대조</td></tr>
+    <tr><td>1.7</td><td>일정 대조: 지금 얼마나 밀렸나</td></tr>
+    <tr><td>1.8</td><td>자료끼리 서로 다른 내용</td></tr>
+    <tr class="part"><td colspan="2">2부 · 수정 계획 v2</td></tr>
+    <tr><td>2.1</td><td>v1에서 바뀌는 것 요약</td></tr>
+    <tr><td>2.2</td><td>12/13 마감 기준 새 일정</td></tr>
+    <tr><td>2.3</td><td>추가 작업 가이드 (N1~N10)</td></tr>
+    <tr class="part"><td colspan="2">3부 · 확인 필요 사항</td></tr>
+    <tr><td>3.1</td><td>팀에 물어볼 것</td></tr>
+    <tr><td>3.2</td><td>외부(교수·사업단)에 확인할 것</td></tr>
+    <tr><td>3.3</td><td>자료에 없어서 확인 못 한 것</td></tr>
+  </table>
+</section>
+
+<!-- 1부 -->
+<section>
+  <h2>1부 · 점검 결과</h2>
+  <h3>1.1 읽은 자료와 점검 방법</h3>
+  <p>P-실무 폴더의 32개 파일을 모두 읽었습니다. 카톡 zip은 같은 폴더에 풀린 txt와 내용이 같고, 회의록 미팅노트 CSV 2개는 목록 파일이며, 빈 템플릿 회의록 1개는 내용이 없습니다.</p>
+  <table>
+    <tr><th style="width:24%">분류</th><th>자료</th><th style="width:30%">이번 점검에서 쓴 내용</th></tr>
+    <tr><td>과제 기준</td><td>과제계획서 최종본(docx), 기업수요 과제 안내 2차(pdf)</td><td>내 담당·공통 업무, 데이터·참여자 수, 평가 방법, WBS</td></tr>
+    <tr><td>과목 공지·규정</td><td>공지사항.txt, 메일 회신.txt, 장비 수령 안내, 생성형 AI 수업활용 가이드라인, AI 윤리 가이드북</td><td>제출 마감, 멘토링 의무·증빙, AI 활용 표기</td></tr>
+    <tr><td>멘토</td><td>멘토링 답장(11/10), 1차 멘토링 기록 2종(10/26), 카톡 속 멘토 메일(10/19, 10/27)</td><td>적용 분야, 제어 주기, 카메라 대수, 시뮬레이터</td></tr>
+    <tr><td>팀 회의</td><td>10/22·10/29 회의록, 노션 미팅노트(1~3차, 멘토링, 사전발표 피드백)</td><td>역할, 결정 사항, 진행 계획</td></tr>
+    <tr><td>팀 대화</td><td>카톡 내보내기 2개(10/24, 11/10)</td><td>장비 문의 경과, 일정, 공지 언급</td></tr>
+    <tr><td>내 준비 자료</td><td>멘토링 질문 리스트, Q&amp;A 대비 노트, 준비 노트</td><td>계획서 요약, 손 판별 문제 3가지</td></tr>
+    <tr><td>참고 자료</td><td>코드 분석 문서 3종(팀원C 코드), 사전발표 초안 pptx, 시스템 구조도 png</td><td>/hand/state 구조, 기존 코드의 손 판별 문제</td></tr>
+  </table>
+  <p class="small">점검 방법: 계획서·공지·멘토 의견에서 내 일과 관련된 요구사항을 하나씩 뽑고, 각각이 v1 계획과 현재 코드(<code>src/gesture</code>, <code>scripts</code>)에 반영됐는지 확인했습니다. 코드는 직접 열어 확인했습니다(예: 손 인식 개수 <code>num_hands=1</code>, 안정화 <code>stable_frames=3</code>).</p>
+
+  <h3>1.2 한눈에 보는 결과</h3>
+  <div class="kpi">
+    <div class="k1"><b>17</b><span>충족 (계획·코드에 있음)</span></div>
+    <div class="k2"><b>13</b><span>부분 충족 / 지연</span></div>
+    <div class="k3"><b>12</b><span>누락 (v1에 없음)</span></div>
+    <div class="k4"><b>4</b><span>팀 결정·선택 사항</span></div>
+  </div>
+  <table>
+    <tr><th style="width:5%">#</th><th>꼭 고쳐야 할 것 (영향이 큰 순)</th><th style="width:22%">근거</th></tr>
+    <tr><td class="num">1</td><td><b>최종 제출 12/13(일) 23:59</b>. 계획서 WBS는 16주차(12/15~)에 보고서를 내도록 되어 있어 마감보다 늦습니다. 실험은 12/9까지 끝내야 합니다.</td><td>공지(9/21 평가 안내)</td></tr>
+    <tr><td class="num">2</td><td><b>참여자 13명(최소 11명)</b>을 선정·학습용 5명 이상과 평가용 8명(최소 6명)으로 나눠야 합니다. v1은 팀원 4명 위주였습니다.</td><td>계획서 4.3, 6.1</td></tr>
+    <tr><td class="num">3</td><td><b>IRB·동의서·촬영 프로토콜</b>은 9주차 일이었는데 아직 하지 않았습니다. 외부 참여자 촬영은 이게 정해져야 시작할 수 있습니다.</td><td>계획서 WBS 9주차, 4.3</td></tr>
+    <tr><td class="num">4</td><td><b>실험 프로토콜 설계와 전체 성능 결과 정리</b>는 내 공통 업무입니다. 5개 실험 전체 대상인데 v1에는 없었습니다.</td><td>계획서 역할분담</td></tr>
+    <tr><td class="num">5</td><td><b>베이스라인 비교</b>(단순 활성화 = 손바닥 유지)가 빠졌습니다. 오작동률 실험의 비교 기준입니다.</td><td>계획서 6.1 ②</td></tr>
+    <tr><td class="num">6</td><td><b>AI 활용 내역</b>(도구·목적·범위·프롬프트) + 본인 기여도를 써야 합니다. 이 모듈 코드는 Claude로 작성했으므로 기록과 코드 이해가 필수입니다.</td><td>공지(8/27), 가이드라인</td></tr>
+    <tr><td class="num">7</td><td><b>HaGRID 보강</b>, <b>손 여러 개 처리</b>, <b>비조작 클래스 학습 방식</b>이 계획서와 다르거나 빠져 있습니다.</td><td>계획서 4.2, 4.3</td></tr>
+  </table>
+</section>
+
+<section class="flowsec">
+  <h3>1.3 과제계획서: 내 담당 요구사항 대조</h3>
+  <p class="small">상태: <span class="s ok">충족</span> 계획·코드에 있음 · <span class="s pt">부분</span> 있지만 계획서와 다르거나 덜 됨 · <span class="s no">누락</span> v1에 없음 · <span class="s tm">팀</span> 내 결정만으로 안 됨</p>
+  <table>
+    <tr><th style="width:4%">#</th><th style="width:34%">계획서 요구사항</th><th class="c">상태</th><th>현재 상태 / 조치</th></tr>
+    <tr><td>1</td><td>규칙 기반 판별을 기준선으로 (3.1 목표1)</td><td class="c"><span class="s ok">충족</span></td><td><code>rules.py</code>. 임계값은 실제 손으로 튜닝 필요 (v1 C단계)</td></tr>
+    <tr><td>2</td><td>경량 분류기(MLP·RF) 학습 후 규칙과 비교해 우수한 쪽 적용</td><td class="c"><span class="s ok">충족</span></td><td><code>training.py</code>, <code>train_classifier.py</code>. 12주차에 선정 (계획서 WBS)</td></tr>
+    <tr><td>3</td><td><b>비조작 동작을 별도 클래스로 포함</b>해 학습 (3.1, 4.3)</td><td class="c"><span class="s pt">부분</span></td><td>현재 기본값은 nonop 프레임을 학습에서 <b>제외</b>(설계 결정 1). 계획서 방식은 <code>--nonop-as-none</code>. → <b>두 방식을 모두 돌려 오작동률로 비교하고 결과로 정함</b> (N7)</td></tr>
+    <tr><td>4</td><td>전처리: 손목 원점, 손바닥 크기 정규화, 왼손 반전</td><td class="c"><span class="s ok">충족</span></td><td><code>features.py</code></td></tr>
+    <tr><td>5</td><td>입력: 정규화 좌표 + 손가락 관절 각도</td><td class="c"><span class="s ok">충족</span></td><td>78차원 특징</td></tr>
+    <tr><td>6</td><td>판별 시간 5ms 미만 (지연 예산 ③)</td><td class="c"><span class="s pt">부분</span></td><td>MLP 0.22ms OK, RF 7.5ms 초과 (가짜 데이터 기준). 실데이터로 재측정</td></tr>
+    <tr><td>7</td><td>참여자 단위 분할 (학습·평가 겹침 금지)</td><td class="c"><span class="s ok">충족</span></td><td>GroupKFold, <code>evaluate.py</code>가 학습 참여자 겹침 경고</td></tr>
+    <tr><td>8</td><td><b>클러치 선정에 쓴 비조작 데이터 참여자는 최종 오작동률 평가에서 제외</b></td><td class="c"><span class="s pt">부분</span></td><td>v1에 원칙만 있고 코드 확인 장치 없음. → 참여자 명부(<code>participants.csv</code>)로 자동 확인 (N3)</td></tr>
+    <tr><td>9</td><td><b>HaGRID 관련 클래스 + no gesture로 학습 보강</b></td><td class="c"><span class="s no">누락</span></td><td>v1·코드 모두 없음. 계획서 데이터표의 1번 항목 → N5</td></tr>
+    <tr><td>10</td><td><b>선정·학습용 5명↑ + 평가용 8명(최소 6명), 총 13명(최소 11명)</b>. 팀원 4명은 학습에만</td><td class="c"><span class="s no">누락</span></td><td>v1은 "팀원 4명 개발 + 외부는 나중". → 모집 계획 N2</td></tr>
+    <tr><td>11</td><td><b>촬영 프로토콜·동의서 작성, IRB 심의/면제 확인</b> (9주차)</td><td class="c"><span class="s no">누락</span></td><td>v1은 "팀 안건"으로만 언급. 계획서상 내 공통 업무(실험 프로토콜)와 직결 → N1</td></tr>
+    <tr><td>12</td><td>영상 대신 랜드마크 좌표만 저장</td><td class="c"><span class="s ok">충족</span></td><td><code>collect_landmarks.py</code>는 CSV만 저장</td></tr>
+    <tr><td>13</td><td>비조작 5종 × 4회 (1인 20회, <b>총 100회 이상</b>)</td><td class="c"><span class="s pt">부분</span></td><td>라벨은 있음. 총 100회↑는 <b>평가 참여자 5명 이상</b>이어야 채워짐 → N2와 연결</td></tr>
+    <tr><td>14</td><td>의도적 활성화 1인 10회, 3초 안 실패율 + 활성화 시간</td><td class="c"><span class="s ok">충족</span></td><td><code>activate_*</code> 라벨, <code>evaluation.py</code></td></tr>
+    <tr><td>15</td><td><b>베이스라인: 단순 활성화(손바닥 펴기 유지)와 클러치를 같은 조건에서 비교</b></td><td class="c"><span class="s no">누락</span></td><td>지금 구조는 손바닥 = 그리퍼 열림이라 그대로는 비교 불가 → N4 (코드 수정)</td></tr>
+    <tr><td>16</td><td>조명·손 각도 조건별 정확도·F1, 비조작은 오작동률로 따로</td><td class="c"><span class="s pt">부분</span></td><td><code>condition</code> 필드 있음. 조건 목록(조명 2 × 각도 2 등)을 프로토콜에서 확정해야 함 (N1)</td></tr>
+    <tr><td>17</td><td>클러치 0.5초 유지 토글, 정지 후보 감지 즉시 위치 고정</td><td class="c"><span class="s ok">충족</span></td><td><code>state_machine.py</code> (<code>hold_position</code>)</td></tr>
+    <tr><td>18</td><td>제스처 판별 흔들림 → 연속 N(예: 5)프레임 동일 시 실행</td><td class="c"><span class="s pt">부분</span></td><td>현재 3프레임. "예: 5"이므로 바꿔도 되지만 근거가 필요 → 실데이터로 3/5 비교 (N7)</td></tr>
+    <tr><td>19</td><td>위치 기준점 = 손목·손바닥 기저부, 그리퍼 전환 중 위치 잠금</td><td class="c"><span class="s ok">충족</span></td><td><code>palm_center</code>(0·5·9·13·17번), 전환 중 hold</td></tr>
+    <tr><td>20</td><td>손 소실·신뢰도 저하 → 일시정지, 재개는 활성화 제스처</td><td class="c"><span class="s ok">충족</span></td><td>PAUSED 모드</td></tr>
+    <tr><td>21</td><td><b>손이 여러 개 → 활성화한 손의 좌우·직전 위치로 추적, 없으면 일시정지</b></td><td class="c"><span class="s no">누락</span></td><td>코드가 <code>num_hands=1</code>이라 다른 손이 끼어들면 그대로 바뀜 → N6</td></tr>
+    <tr><td>22</td><td>높이 모드 후보(엄지 척/V자)를 비조작 데이터 비교로 확정 (10주차)</td><td class="c"><span class="s pt">지연</span></td><td>초안만 있음. 클러치와 함께 E단계에서 확정</td></tr>
+    <tr><td>23</td><td>처리 속도 30 FPS 이상</td><td class="c"><span class="s ok">충족</span></td><td>ZIO 최대 30 FPS = 하한 그대로. 측정은 A·G단계</td></tr>
+    <tr><td>24</td><td>OpenCV 상태 표시 화면(랜드마크·제어 모드·그리퍼) (4.2)</td><td class="c"><span class="s ok">충족</span></td><td>v1 G단계 <code>live_demo.py</code>로 계획됨 (미구현)</td></tr>
+    <tr><td>25</td><td>/hand/state(위치·높이·그리퍼·모드·신뢰도·타임스탬프)</td><td class="c"><span class="s tm">팀</span></td><td>초안 v0.1, 합의 대기 (v1 B단계)</td></tr>
+    <tr><td>26</td><td>노드 타임스탬프로 처리 지연 기록, rosbag2</td><td class="c"><span class="s ok">충족</span></td><td>v1 H단계 (header.stamp). rosbag2 녹화는 팀원B와 형식 맞추기</td></tr>
+    <tr><td>27</td><td>결과: 참여자별 비율 + t 분포 95% 신뢰구간</td><td class="c"><span class="s ok">충족</span></td><td><code>evaluation.mean_ci</code></td></tr>
+  </table>
+</section>
+
+<section class="flowsec">
+  <h3>1.4 과제계획서: 공통 업무 대조</h3>
+  <p>계획서 역할분담에서 내 공통 업무는 <b>"실험 프로토콜 설계 및 전체 성능 평가 결과 정리"</b>입니다. 내 지표만이 아니라 팀 5개 실험 전체에 걸리는 일인데, v1은 제스처 지표만 다뤘습니다.</p>
+  <table>
+    <tr><th style="width:18%">실험 (6.1)</th><th style="width:15%">지표 담당</th><th>내가 할 일 (프로토콜 설계 + 결과 정리)</th><th class="c">v1</th></tr>
+    <tr><td>① 떨림 안정화</td><td>팀원A</td><td>정지 10초·이동·미세 이동(약 5mm) 녹화 절차를 프로토콜에 포함, 결과표 양식</td><td class="c"><span class="s no">누락</span></td></tr>
+    <tr><td>② 조작 의도 인식</td><td><b>제스처 담당</b></td><td>오작동률·활성화 실패율·정확도·F1. 베이스라인(손바닥 유지, 규칙 기반) 포함</td><td class="c"><span class="s pt">부분</span></td></tr>
+    <tr><td>③ 실시간성</td><td>팀원B</td><td>240fps 촬영 30회 이상, 노드 타임스탬프 1,000프레임 이상 → 기록 양식·집계</td><td class="c"><span class="s no">누락</span></td></tr>
+    <tr><td>④ 작업 수행</td><td>팀원C</td><td>목표 영역 5곳 × 4회, 90초 제한, 방식 순서 교차, 5분 연습 → 세션 진행표, Wilcoxon·Holm·효과크기 분석</td><td class="c"><span class="s no">누락</span></td></tr>
+    <tr><td>⑤ 안전 기능</td><td>팀원C</td><td>4가지 상황 × 20회 이상, 실제 정지 시점 측정 → 기록 양식</td><td class="c"><span class="s no">누락</span></td></tr>
+  </table>
+  <div class="box why"><span class="t">이게 왜 중요한가</span>평가 참여자 1인 1회 세션(약 1~1.5시간)에서 <b>제스처 평가 + 비조작 20회 + 활성화 10회 + 작업 수행</b>을 함께 진행합니다(계획서 14주차). 세션 순서·스크립트·기록지를 누군가 한 번에 설계해야 하고, 계획서상 그 담당이 나입니다.</div>
+
+  <h3>1.5 공지사항·과목 규정 대조</h3>
+  <table>
+    <tr><th style="width:36%">규정 (출처)</th><th class="c">상태</th><th>조치</th></tr>
+    <tr><td>최종발표 과제 제출 <b>12/13(일) 23:59</b> (9/21 공지)</td><td class="c"><span class="s pt">부분</span></td><td>v1 일정에 날짜는 있었지만 계획서 WBS(16주차 보고서)와 충돌하는 점은 반영 안 됨 → 2.2 새 일정</td></tr>
+    <tr><td>AI 활용 시 <b>도구·목적·범위·프롬프트 명시</b>, "AI 활용 내역 및 본인 기여도" 작성 (8/27 공지)</td><td class="c"><span class="s no">누락</span></td><td>이 모듈의 코드·문서 상당 부분을 Claude로 작성 → 지금부터 활용 로그 기록 (N9)</td></tr>
+    <tr><td>AI 탐지 점검 + <b>본인 사고 과정·기여도 중심 평가</b></td><td class="c"><span class="s no">누락</span></td><td>코드를 직접 설명할 수 있어야 함 → 미뤄 둔 3~8단계 코드 설명을 일정에 넣음 (N9)</td></tr>
+    <tr><td>AI 프롬프트에 개인정보·비공개 데이터 입력 금지</td><td class="c"><span class="s pt">부분</span></td><td>참여자 이름·동의서는 AI에 넣지 않고, 데이터에는 P-ID만 사용 (N1·N2 규칙에 명시)</td></tr>
+    <tr><td>기업 멘토링 1회 이상(완료 10/26), 12/18까지 추가 가능, 증빙(화면 캡처·메일 캡처)</td><td class="c"><span class="s ok">충족</span></td><td>1차 완료. 11/10 멘토 메일도 증빙으로 캡처 보관. 2차는 계획서대로 12/11 이전</td></tr>
+    <tr><td>최종 결과보고서에 확정 멘토 정보 기재 (과제 안내)</td><td class="c"><span class="s tm">팀</span></td><td>보고서 작성 시 반영 (정현우, KETI 지능로보틱스연구센터)</td></tr>
+    <tr><td>평가 및 재료비 안내 PDF (9/21 공지 첨부)</td><td class="c"><span class="s no">누락</span></td><td>폴더에 없음. 평가 기준·재료비(삼각대, 비상정지 스위치)를 확인해야 함 → 3.2</td></tr>
+  </table>
+
+  <h3>1.6 멘토 피드백·사전발표 피드백 대조</h3>
+  <table>
+    <tr><th style="width:38%">피드백 (출처)</th><th class="c">상태</th><th>내 일과의 연결</th></tr>
+    <tr><td>적용 분야를 "비접촉이 실제로 필요한 대상"으로 구체화 (멘토 10/27, 11/10, 사전발표)</td><td class="c"><span class="s tm">팀</span></td><td>정해지면 작업 실험의 물체·시나리오와 비조작 동작 목록에 반영해야 함</td></tr>
+    <tr><td>제어 주기는 실제 영상 처리 성능을 확인한 뒤 설정 (멘토 10/27)</td><td class="c"><span class="s pt">부분</span></td><td>A단계에서 잰 ZIO FPS·인식 시간을 <b>팀원B께 수치로 전달</b> (v1에 없던 공유 단계 추가)</td></tr>
+    <tr><td>카메라 1대로 시작, 가림·깊이 문제 근거가 생기면 2대 (멘토 11/10, 2차 회의)</td><td class="c"><span class="s pt">부분</span></td><td>조건별 손 인식 실패율(<code>hand_detected</code>)을 기록하면 "2대가 필요한 근거"를 내가 만들 수 있음</td></tr>
+    <tr><td>웹캠 여러 대로 데이터를 모으면 쉬움 (1차 멘토링)</td><td class="c"><span class="s tm">선택</span></td><td>수집 때 각도 조건을 늘리는 대안. 우선순위 낮음</td></tr>
+    <tr><td>약점 하나에 집중, 팀만의 문제 재정의 (사전발표) → 팀 결정: "가성비"(3차 회의)</td><td class="c"><span class="s pt">부분</span></td><td>"저가 웹캠(30 FPS, 조명 변화)에서도 판별이 유지된다"를 <b>조건별 결과</b>로 보여 주는 것이 내 기여. 프로토콜에 저조도 조건 포함</td></tr>
+    <tr><td>Ubuntu 노트북 사용, Docker/VM 비추천 (1차 멘토링)</td><td class="c"><span class="s ok">충족</span></td><td>듀얼부팅 계획 (v1 H단계)</td></tr>
+    <tr><td>Gazebo Harmonic + RViz2, 필요 시 MoveIt 2 (멘토 11/10)</td><td class="c"><span class="s ok">충족</span></td><td>로봇 쪽(팀원C·팀원B). 내 노드는 토픽만 맞추면 됨</td></tr>
+  </table>
+</section>
+
+<section class="flowsec">
+  <h3>1.7 일정 대조: 지금 얼마나 밀렸나</h3>
+  <p>주차는 계획서 기준(9/1 시작)입니다. 11주차 = 11/10~11/16, 15주차 = 12/8~12/14, 16주차 = 12/15~12/21.</p>
+  <table>
+    <tr><th style="width:12%">주차</th><th>계획서 WBS의 내 관련 일</th><th class="c">상태</th></tr>
+    <tr><td>9주차</td><td>선정·학습용 참여자 모집, <b>촬영 프로토콜·동의서, IRB 확인</b></td><td class="c"><span class="s no">미착수</span></td></tr>
+    <tr><td>10주차</td><td>제스처·비조작 1차 촬영(외부 5명↑, IRB 전엔 팀원), 클러치 후보 비교, 분류기 특징·클래스 정의, <b>클러치·높이 확정</b></td><td class="c"><span class="s pt">코드만</span></td></tr>
+    <tr><td>11주차 (지금)</td><td>규칙 기반 판별 구현, 분류기 1차 학습, 두 파트 연동</td><td class="c"><span class="s pt">코드만</span></td></tr>
+    <tr><td>12주차</td><td>규칙 vs 학습 비교 후 선정, <b>실험 프로토콜 확정·참여자 모집</b></td><td class="c"><span class="s tm">예정</span></td></tr>
+    <tr><td>13주차</td><td>파일럿 1~2명 → 실험용 버전 확정, <b>주 후반 평가 세션 시작</b></td><td class="c"><span class="s tm">예정</span></td></tr>
+    <tr><td>14주차</td><td>평가 참여자 세션(1인 1~1.5시간)</td><td class="c"><span class="s tm">예정</span></td></tr>
+    <tr><td>15주차</td><td>결과 분석, 2차 멘토링(12/11 이전)</td><td class="c"><span class="s tm">예정</span></td></tr>
+    <tr><td>16주차</td><td>최종 보고서, 오픈소스 공개, 시연·발표 <b>← 제출 마감 12/13이 15주차 안에 있음</b></td><td class="c"><span class="s no">충돌</span></td></tr>
+  </table>
+  <div class="box warn"><span class="t">판단</span>실데이터 기준으로 약 <b>2주</b> 밀려 있습니다. 코드가 먼저 준비돼 있어서 수집만 시작하면 E·F단계는 며칠 안에 끝낼 수 있습니다. 하지만 <b>외부 참여자</b>는 IRB·동의서가 막고 있어 코드로 당길 수 없습니다. 그래서 이번 주 최우선은 코드가 아니라 <b>프로토콜·동의서·IRB 문의</b>입니다.</div>
+
+  <h3>1.8 자료끼리 서로 다른 내용</h3>
+  <table>
+    <tr><th style="width:30%">항목</th><th>차이</th><th style="width:22%">처리</th></tr>
+    <tr><td>최종 제출 시점</td><td>공지: 12/13(일) 23:59 / 계획서 WBS: 16주차(12/15~) 최종 보고서</td><td>공지 우선. 12/13 기준 역산</td></tr>
+    <tr><td>멘토링 2차 기한</td><td>계획서: 12/11 이전 / 사업단 메일: 12/18까지 가능</td><td>계획서대로 12/11 이전 (보고서 반영 위해)</td></tr>
+    <tr><td>ROS 2 버전</td><td>1차 멘토링 기록: "Humble" / 이후 결정·멘토 11/10 메일: Jazzy + Harmonic</td><td>Jazzy 유지 (최신 합의)</td></tr>
+    <tr><td>인식부 → 제어부 연결</td><td>계획서·구조도·PPT: <code>/hand/state</code> 토픽 하나 / 3차 회의: 팀원B가 "좌표를 하나의 api 서버에 모으는 것"을 구현 중</td><td><b>팀 확인 필요</b> (3.1)</td></tr>
+    <tr><td>판별 안정화 프레임 수</td><td>계획서: 연속 N(예: 5) / 코드: 3</td><td>실데이터로 비교해 결정</td></tr>
+    <tr><td>비조작 클래스 학습</td><td>계획서: 비조작을 별도 클래스로 학습 / 코드 기본값: 학습에서 제외</td><td>두 방식 비교 후 보고</td></tr>
+    <tr><td>장비 문의 경과</td><td>HANDOFF: "아직 아무도 장비 문의 안 함" / 카톡 11/10: 산학협력단에 전화 → 담당 교수 안내, 532호 방문 → 11/11 웹캠 수령</td><td>HANDOFF 갱신 필요</td></tr>
+  </table>
+</section>
+
+<!-- 2부 -->
+<section class="page" style="break-before: page; page-break-before: always">
+  <h2>2부 · 수정 계획 v2</h2>
+  <h3>2.1 v1에서 바뀌는 것 요약</h3>
+  <table>
+    <tr><th style="width:24%">구분</th><th>내용</th></tr>
+    <tr><td>그대로 유지</td><td>v1의 A(웹캠 확인), C(규칙 튜닝), F(분류기 학습), G(실시간 데모), H(ROS 2 노드) 가이드는 그대로 씁니다.</td></tr>
+    <tr><td>수정</td><td><b>B</b> 팀 합의에 IRB·참여자·api 서버 안건 추가 · <b>D</b> 수집을 "팀원 4명"에서 "팀원 + 선정·학습용 외부 5명"으로 · <b>E</b> 클러치 비교에 베이스라인(손바닥 유지)과 높이 모드 포함 · <b>I</b> 최종 평가를 평가 참여자 8명(최소 6명) 세션 기반으로, 12/9까지</td></tr>
+    <tr><td>추가 (N1~N10)</td><td>N1 실험 프로토콜·동의서·IRB · N2 참여자 모집·명부 · N3 참여자 역할 자동 확인 · N4 베이스라인 모드 · N5 HaGRID 보강 · N6 손 여러 개 처리 · N7 계획서와 다른 설계 2건 검증 · N8 전체 결과 정리 · N9 AI 활용 기록·코드 이해 · N10 팀 저장소 반영·공개</td></tr>
+  </table>
+
+  <h3>2.2 12/13 마감 기준 새 일정</h3>
+  <table>
+    <tr><th style="width:17%">기간</th><th>할 일 (★ = 다른 일을 막고 있어서 먼저)</th><th style="width:20%">끝났다는 기준</th></tr>
+    <tr><td><b>11주차</b><br>11/11~11/16</td><td>★N1 프로토콜·동의서 초안, IRB 문의 · ★B 단톡(IRB·참여자·api 서버 포함) · A 웹캠 확인 → 팀원B께 FPS 공유 · C 파일럿·규칙 튜닝 · D 팀원 4명 수집 · N9 AI 로그 시작, 코드 설명 1회차</td><td>IRB 필요 여부 답 받음, 팀원 데이터 확보</td></tr>
+    <tr><td><b>12주차</b><br>11/17~11/23</td><td>N2 선정·학습용 5명 수집 (IRB 미정이면 팀원 추가 세션으로 대체) · E 클러치·높이 확정(N4 베이스라인 포함) · N5 HaGRID · F 분류기 선정(N7 포함) · N6 손 여러 개 · G 실시간 데모 · N1 프로토콜 확정 · Ubuntu 설치</td><td>클러치·높이 확정, 적용 방식 선정, 프로토콜 v1.0</td></tr>
+    <tr><td><b>13주차</b><br>11/24~11/30</td><td>H ROS 2 노드·Gazebo 연동 · 파일럿 1~2명 → <b>실험용 버전 동결</b> · 평가 참여자 일정 예약 · 주 후반 평가 세션 시작</td><td>버전 태그, 세션 예약 완료</td></tr>
+    <tr><td><b>14주차</b><br>12/1~12/7</td><td>평가 세션 (8명 목표, 최소 6명) · 세션마다 당일 데이터 확인 · N8 집계 스크립트로 중간 결과 확인</td><td>최소 6명 완료</td></tr>
+    <tr><td><b>15주차</b><br>12/8~12/13</td><td>12/9까지 남은 세션 · N8 최종 분석(신뢰구간·Wilcoxon·효과크기) · 2차 멘토링(12/11 이전) · 보고서·발표자료 · AI 활용 내역 · <b>12/13 23:59 제출</b></td><td>제출 완료</td></tr>
+  </table>
+  <div class="box warn"><span class="t">IRB에 따른 두 갈래 (계획서 5.1의 대비책 그대로)</span>
+    · <b>면제·승인이 12주차 안에 나오면</b> 위 일정대로 진행합니다.<br>
+    · <b>심의 대상이고 승인이 늦어지면</b> 팀원 데이터로 개발을 계속합니다. 14주차까지 승인이 안 나면 <b>사용자 실험을 팀원 대상으로 축소</b>하고, 그 한계를 결과에 명시합니다. 이 경우 "학습에 안 쓴 사람" 조건을 지키려면 팀원 4명 중 일부를 학습에서 빼 평가 전용으로 남겨야 합니다. 그래서 <b>팀원 데이터를 모을 때부터 누가 평가용인지 미리 정해 둡니다</b>.</div>
+</section>
+
+<section class="flowsec">
+  <h3>2.3 추가 작업 가이드</h3>
+
+  <div class="phase-head"><h3>N1. 실험 프로토콜·동의서·IRB</h3><span class="when">11주차 시작 → 12주차 확정 · 내 공통 업무</span></div>
+  <div class="box why"><span class="t">왜</span>외부 참여자를 찍으려면 동의서와 IRB 결론이 먼저 있어야 합니다. 계획서상 9주차 일이었고, 지금 일정 전체를 막고 있습니다.</div>
+  <ol>
+    <li><b>IRB 문의 (이번 주)</b>: 교내 연구윤리위원회에 "손 랜드마크 좌표만 저장, 영상 미저장, 성인 대상 비침습 실험"이 심의 면제 대상인지 묻습니다. 지도교수(지도교수)께 절차를 먼저 여쭤보는 것이 빠릅니다.</li>
+    <li><b>프로토콜 문서</b> <code>docs/experiment_protocol.md</code>에 들어갈 내용:
+      <table>
+        <tr><th style="width:26%">항목</th><th>내용</th></tr>
+        <tr><td>참여자</td><td>그룹(팀/선정·학습/평가), 인원, 모집 방법, 제외 기준. P-ID만 사용</td></tr>
+        <tr><td>장비·환경</td><td>ZIO-C960(1280×720 MJPG), 삼각대 정면 고정, 손 50cm↑, 조명 조건 정의(예: bright / dim), 각도 조건(정면 / 측면 30°)</td></tr>
+        <tr><td>세션 순서 (평가)</td><td>동의 → 설명·연습 → 제스처 세트 → 비조작 5종×4 → 활성화 10회(클러치, 베이스라인) → 작업 수행(방식 순서 교차, 방식별 5분 연습) → 설문. 약 1~1.5시간</td></tr>
+        <tr><td>실험 ①~⑤ 절차</td><td>각 팀원 담당 실험의 반복 수·판정 기준을 계획서 6.1에서 그대로 옮기고 담당자 확인</td></tr>
+        <tr><td>진행 스크립트</td><td>참여자에게 읽어 줄 문장 (예: "지금부터 평소처럼 물을 마셔 주세요. 로봇은 신경 쓰지 않으셔도 됩니다")</td></tr>
+        <tr><td>기록지</td><td>세션 일시, 조건, 특이사항, 실패 사유. 이름은 동의서에만</td></tr>
+        <tr><td>안전</td><td>실물 실험 시 진행자 1인 비상정지 옆 대기, 낮은 작업 높이·완충재</td></tr>
+      </table></li>
+    <li><b>동의서</b>: 목적, 수집 항목(손 좌표·설문, 영상 미저장), 소요 시간, 철회 권리, 데이터 보관·폐기, 시연 영상 별도 동의(얼굴 비식별화). IRB 결과에 맞춰 확정합니다.</li>
+  </ol>
+  <div class="box done"><span class="t">완료 기준</span>IRB 결론(면제/심의) 확인, 프로토콜 v1.0과 동의서를 팀원 전원이 확인. 12주차 중.</div>
+
+  <div class="phase-head"><h3>N2. 참여자 모집과 명부</h3><span class="when">11~13주차</span></div>
+  <table>
+    <tr><th style="width:22%">그룹</th><th style="width:14%">인원</th><th>쓰임</th><th style="width:20%">ID</th></tr>
+    <tr><td>팀원</td><td>4명</td><td>개발·학습만 (평가 제외)</td><td>T01~T04</td></tr>
+    <tr><td>선정·학습용</td><td>5명 이상</td><td>클러치·높이 선정, 분류기 학습</td><td>S01~</td></tr>
+    <tr><td>평가용</td><td>8명 (최소 6명)</td><td>최종 지표 전부. 위 그룹과 겹치면 안 됨</td><td>E01~</td></tr>
+  </table>
+  <p>참여자 ID를 그룹 접두어로 정하면 실수가 줄어듭니다(v1의 P01~ 대신). 명부 <code>data/participants.csv</code>(id, group, 수집일, 조건)는 이름 없이 만들고, 이름과 ID 대응표는 동의서와 함께 오프라인으로 보관합니다. <b>AI에는 입력하지 않습니다.</b></p>
+
+  <div class="phase-head"><h3>N3. 참여자 역할 자동 확인 <span class="tag w">같이 구현</span></h3><span class="when">12주차 · 30분</span></div>
+  <p><code>evaluate.py</code>가 지금은 "학습에 쓴 참여자"만 경고합니다. 명부를 읽어 <b>평가 데이터에 T·S 그룹이 섞이면 경고</b>하도록 바꿉니다. 그러면 계획서의 "클러치 선정 참여자는 최종 오작동률에서 제외" 규칙이 자동으로 지켜집니다.</p>
+</section>
+
+<section class="flowsec">
+  <div class="phase-head"><h3>N4. 베이스라인: 단순 활성화 모드 <span class="tag w">같이 구현</span></h3><span class="when">12주차 · 1~2시간 · E단계 전에</span></div>
+  <div class="box why"><span class="t">왜</span>계획서 실험 ②의 비교 기준이 "단순 활성화 방식(예: 손바닥 펴기 유지)"입니다. 설계한 클러치가 오작동을 얼마나 줄였는지 보이려면 같은 데이터로 둘 다 계산해야 합니다.</div>
+  <ul>
+    <li><b>문제</b>: 지금 구조에서 손바닥은 그리퍼 열림이라, 클러치를 <code>palm</code>으로 바꾸면 역할이 겹칩니다.</li>
+    <li><b>해결</b>: 평가 전용 옵션 <code>--clutch palm</code>을 허용하고, 이때는 대기 상태에서만 손바닥 0.5초 유지를 활성화로 봅니다. 오작동률·활성화 실패율은 "활성화가 일어났는가"만 보므로 그리퍼 역할 충돌이 결과에 영향을 주지 않습니다.</li>
+    <li><b>데이터</b>: 비조작 trial은 이미 저장한 좌표로 다시 계산하면 됩니다(재촬영 불필요). 활성화 시도는 <code>activate_palm</code> 라벨을 수집 세트 2에 추가합니다.</li>
+    <li><b>규칙 기반 vs 분류기</b>도 같은 데이터로 비교합니다(계획서 실험 ②의 두 번째 기준).</li>
+  </ul>
+<pre>python scripts\evaluate.py --data "data\raw\S*.csv" --clutch palm   <span class="c"># 베이스라인</span>
+python scripts\evaluate.py --data "data\raw\S*.csv" --clutch call   <span class="c"># 설계 클러치</span></pre>
+
+  <div class="phase-head"><h3>N5. HaGRID 보강 <span class="tag w">같이 구현</span></h3><span class="when">12주차 · 2~3시간</span></div>
+  <ol>
+    <li><b>라이선스·이용 조건 확인</b> 후 출처 표기 방법을 기록합니다(계획서 4.3 "라이선스 조건 준수").</li>
+    <li>필요한 클래스만 받습니다: <code>palm, fist, peace, call, rock, ok, like, one, no_gesture</code>. 전체 데이터셋은 매우 크므로 일부만 받습니다.</li>
+    <li>주석에 손 랜드마크가 들어 있는지 먼저 확인합니다. 없으면 이미지에 MediaPipe(IMAGE 모드)를 돌려 21점을 뽑고, 우리 CSV 형식으로 저장합니다(<code>scripts/import_hagrid.py</code>, participant = <code>HAGRID</code>).</li>
+    <li>HaGRID는 <b>학습에만</b> 쓰고 평가에는 쓰지 않습니다. 학습에 넣은 경우와 안 넣은 경우를 비교해 보강 효과를 보고합니다.</li>
+  </ol>
+
+  <div class="phase-head"><h3>N6. 손이 여러 개일 때 <span class="tag w">같이 구현</span></h3><span class="when">12주차 · 1~2시간</span></div>
+  <p>계획서 예외 처리: "활성화한 손의 좌우 구분과 직전 위치를 저장하고, 같은 좌우이면서 직전 위치와 가장 가까운 손만 추적. 해당하는 손이 없으면 일시정지."</p>
+  <ul>
+    <li><code>HandDetector</code>를 <code>num_hands=2</code>로 바꾸고, 활성화 순간의 손(좌우 + 위치)을 기억하는 선택기를 <code>pipeline.py</code> 앞단에 둡니다.</li>
+    <li>판별 시간과 FPS를 다시 측정합니다. 손 2개 탐지는 느려질 수 있으므로 30 FPS가 유지되는지 확인합니다.</li>
+    <li>테스트: 가짜 손 두 개로 "다른 손이 들어와도 추적이 안 바뀜", "추적하던 손이 사라지면 PAUSED"를 검증합니다.</li>
+  </ul>
+
+  <div class="phase-head"><h3>N7. 계획서와 다른 설계 2건 검증</h3><span class="when">12주차 · F단계와 함께</span></div>
+  <table>
+    <tr><th style="width:26%">항목</th><th>비교 방법</th><th style="width:26%">보고</th></tr>
+    <tr><td>비조작 클래스 학습</td><td>기본(제외) vs <code>--nonop-as-none</code>으로 각각 학습 → 같은 선정·학습 참여자 교차검증에서 오작동률·정확도 비교</td><td>더 나은 쪽 채택. 계획서와 다르면 이유를 보고서에 기술</td></tr>
+    <tr><td>안정화 프레임 수</td><td><code>stable_frames</code> 3 / 5로 오작동률·활성화 시간 비교 (5는 약 0.07초 더 늦음)</td><td>선택 근거를 수치로</td></tr>
+  </table>
+</section>
+
+<section class="flowsec">
+  <div class="phase-head"><h3>N8. 전체 성능 결과 정리 <span class="tag w">같이 구현</span></h3><span class="when">13주차 준비 → 15주차 분석 · 내 공통 업무</span></div>
+  <ol>
+    <li><b>결과 수집 양식</b>을 13주차 전에 팀에 배포합니다. 실험마다 참여자 ID, 조건, 시행 번호, 결과값, 비고를 같은 열 이름의 CSV로 받습니다.</li>
+    <li><b>집계 스크립트</b> <code>scripts/summarize_results.py</code>: 참여자별 비율 → 평균·t 분포 95% 신뢰구간(이미 있는 <code>mean_ci</code> 재사용). 연속 지표는 평균·표준편차.</li>
+    <li><b>비교 검정</b> (계획서 6.1 결과 보고): 손동작 vs 키보드는 참여자별 성공률·소요시간 중앙값으로 Wilcoxon 부호순위 검정을 하고, 리더 암(확장)은 Holm 보정을 합니다. 6명이면 최소 p값이 약 0.03이라 <b>효과크기와 참여자별 결과를 함께</b> 제시합니다. 검정은 <code>scipy</code>로 합니다(점검 중 <code>requirements.txt</code>에 빠져 있던 것을 발견해 <code>scipy==1.17.1</code>로 고정 추가함).</li>
+    <li><b>목표 달성표</b>: 5개 실험의 지표 × 목표 × 결과 × 달성 여부를 한 장으로 만듭니다. 보고서와 발표에 그대로 씁니다.</li>
+  </ol>
+
+  <div class="phase-head"><h3>N9. AI 활용 기록과 코드 이해</h3><span class="when">지금부터 계속</span></div>
+  <div class="box warn"><span class="t">과목 규정</span>AI를 쓴 과제·발표·보고서에는 <b>도구·목적·범위·프롬프트</b>를 적어야 합니다. 출처 없이 쓰면 표절로 봅니다. 평가는 AI 탐지와 함께 <b>본인의 사고 과정·기여도</b> 중심입니다. 팀 계획서도 8장에 이미 이 형식으로 적었습니다.</div>
+  <ul>
+    <li><b>로그</b> <code>docs/ai_usage_log.md</code>: 날짜 · 도구(Claude Code) · 목적 · 주요 프롬프트 · AI가 한 일 · 내가 검토·결정·수정한 일. 이번 대화부터 기록합니다(환경 구축, 3~8단계 코드, 계획서 2종).</li>
+    <li><b>내 결정 기록</b>: 클러치 선정, 임계값 조정, 방식 선택처럼 데이터를 보고 내가 내린 결정을 근거와 함께 남깁니다. 이게 "본인 기여도"의 근거가 됩니다.</li>
+    <li><b>코드 이해</b>: 미뤄 둔 3~8단계 코드 설명을 11~12주차에 2~3회로 나눠 진행합니다. 발표·질의에서 직접 설명할 수 있어야 합니다.</li>
+  </ul>
+
+  <div class="phase-head"><h3>N10. 팀 저장소 반영과 공개</h3><span class="when">12~13주차</span></div>
+  <ul>
+    <li>지금 코드는 로컬(<code>C:\Dev\P_project</code>)에만 있습니다. 팀 저장소 규칙(<code>feature/gesture</code> 브랜치 → PR, main 직접 push 금지)대로 올립니다.</li>
+    <li>계획서 3.2(4): 최종적으로 ROS 2 패키지로 공개합니다. 설치 방법·실행 예제·실험 결과를 문서화하고, 사용한 오픈소스(MediaPipe, OpenCV, scikit-learn, HaGRID) 라이선스를 표기합니다.</li>
+    <li><code>data/</code>, 모델, 참여자 명부는 올리지 않습니다(이미 <code>.gitignore</code>).</li>
+  </ul>
+</section>
+
+<!-- 3부 -->
+<section class="page" style="break-before: page; page-break-before: always">
+  <h2>3부 · 확인 필요 사항</h2>
+  <h3>3.1 팀에 물어볼 것 (이번 주 단톡)</h3>
+  <ul class="check">
+    <li><b>IRB 진행 여부와 담당</b>: 계획서 9주차 항목인데 진행 기록이 없음. 내가 프로토콜·동의서를 맡고 문의도 할지</li>
+    <li><b>참여자 모집</b>: 선정·학습용 5명 + 평가용 8명을 어떻게 모을지(지인, 학과 공지), 사례 여부</li>
+    <li><b>인식부 ↔ 제어부 연결 방식</b>: 계획서는 <code>/hand/state</code> 토픽 하나인데, 3차 회의에서 팀원B가 말한 "api 서버"가 무엇인지</li>
+    <li><b>/hand/state 초안 + 질문 6개</b>, MediaPipe 1.2.2 통일 (v1 B단계)</li>
+    <li><b>적용 분야 확정</b>: 작업 실험 물체·시나리오와 비조작 동작 목록에 영향</li>
+    <li><b>실험별 담당자 확인</b>: 프로토콜에 넣을 실험 ①·③·④·⑤의 세부 절차를 각 담당에게 받기</li>
+    <li><b>12/13 제출 일정</b>: 계획서 WBS(16주차 보고서)와 다르므로 팀 일정 재조정</li>
+  </ul>
+
+  <h3>3.2 외부에 확인할 것</h3>
+  <table>
+    <tr><th style="width:26%">대상</th><th>내용</th></tr>
+    <tr><td>지도교수 (지도·대표교수)</td><td>IRB 절차 · 장비(삼각대, 비상정지 스위치, Ubuntu 노트북) · OMX-AI 사용 순서. 11/10 산학협력단 통화에서 "담당 교수님께 문의"를 안내받았지만, 팀원C 말대로 지도교수님께 메일하는 쪽이 빠를 수 있음</td></tr>
+    <tr><td>연구윤리위원회(IRB)</td><td>심의 면제 해당 여부, 소요 기간, 필요한 서류</td></tr>
+    <tr><td>AI중심대학사업단</td><td>평가 기준·재료비 안내 PDF 재확인 (폴더에 없음)</td></tr>
+    <tr><td>KETI 멘토</td><td>2차 멘토링 일정 (12/11 이전), 12주차 진행 상황 메일 공유 (계획서 WBS)</td></tr>
+  </table>
+
+  <h3>3.3 자료에 없어서 확인 못 한 것</h3>
+  <ul>
+    <li><b>평가 및 재료비 안내 PDF</b>(<code>2026_AI P-실무프로젝트_평가_260921.pdf</code>): 평가 항목 비중, 재료비 신청 방법</li>
+    <li><b>11/4 공지</b>: 카톡에서 "졸작2랑 완전히 따로 하는 걸로 알았는데 바뀐 것 같다"는 언급만 있고, 공지 원문이 없음. 최종 산출물 요구가 바뀌었는지 확인 필요</li>
+    <li><b>사전발표 피드백 상세</b>: 노션 기록은 3줄 요약뿐. 녹음해 둔 피드백(11/2)을 정리하면 보고서 개선점에 쓸 수 있음</li>
+    <li><b>최종 발표 형식·일정</b>: 공지에는 제출 마감만 있음</li>
+  </ul>
+  <div class="box why" style="margin-top:16px"><span class="t">이번 주 순서</span>① 단톡에 3.1 안건 올리기 → ② 지도교수께 IRB·장비 문의 메일 → ③ ZIO 웹캠 확인(v1 A) → ④ 프로토콜·동의서 초안(N1) → ⑤ 파일럿·규칙 튜닝(v1 C) → ⑥ 팀원 수집. 이때 팀원 중 평가 전용 인원을 미리 정해 둡니다.</div>
+  <p class="small" style="margin-top:12px">이 문서는 Claude(Anthropic)로 P-실무 폴더 자료와 현재 코드를 대조해 작성했습니다. 판단·채택은 제스처 담당이 검토 후 결정합니다. (과목 AI 활용 표기 규정에 따른 기록)</p>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<title>제스처 판별 모듈 구현 계획</title>
+<style>
+  @page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+  :root {
+    --ink: #1b1f24; --muted: #5b6470; --line: #d6dbe1; --soft: #f3f5f8;
+    --accent: #1f5fbf; --accent-soft: #e8f0fc; --warn: #b35900; --warn-soft: #fff4e5;
+    --ok: #1e7a46; --ok-soft: #e7f5ec; --new: #7a3fb8; --new-soft: #f3ecfb;
+  }
+  * { box-sizing: border-box; }
+  body { font-family: "Malgun Gothic", "맑은 고딕", sans-serif; color: var(--ink); background: #fff;
+         font-size: 10pt; line-height: 1.6; margin: 0; }
+  h1 { font-size: 22pt; margin: 0 0 6px; letter-spacing: -0.5px; }
+  h2 { font-size: 15pt; margin: 0 0 10px; padding-bottom: 6px; border-bottom: 2px solid var(--accent); color: var(--accent); }
+  h3 { font-size: 11.5pt; margin: 16px 0 6px; }
+  h4 { font-size: 10.5pt; margin: 12px 0 4px; color: var(--muted); }
+  p { margin: 4px 0 8px; }
+  ul, ol { margin: 4px 0 8px; padding-left: 20px; }
+  li { margin: 2px 0; }
+  code { font-family: Consolas, "D2Coding", monospace; font-size: 9pt; background: var(--soft);
+         padding: 1px 4px; border-radius: 3px; }
+  pre { font-family: Consolas, monospace; font-size: 8.8pt; background: #1e2329; color: #e6e9ee;
+        padding: 9px 11px; border-radius: 6px; margin: 6px 0 10px; white-space: pre-wrap; line-height: 1.5;
+        page-break-inside: avoid; }
+  pre .c { color: #8fa1b3; }
+  table { width: 100%; border-collapse: collapse; margin: 6px 0 12px; font-size: 9.2pt; }
+  th, td { border: 1px solid var(--line); padding: 5px 7px; vertical-align: top; text-align: left; }
+  th { background: var(--soft); font-weight: 700; }
+  .page { page-break-after: always; }
+  .page:last-child { page-break-after: auto; }
+  .flowsec { margin-top: 18px; }
+  table.cmd { table-layout: fixed; }
+  table.cmd code { word-break: break-all; white-space: normal; }
+  .cover { height: 250mm; display: flex; flex-direction: column; justify-content: center; }
+  .cover .kicker { color: var(--accent); font-weight: 700; letter-spacing: 1px; font-size: 10pt; }
+  .cover .sub { font-size: 12.5pt; color: var(--muted); margin-bottom: 26px; }
+  .cover .meta td { border: none; padding: 3px 12px 3px 0; font-size: 10pt; }
+  .cover .meta td:first-child { color: var(--muted); width: 90px; }
+  .box { border: 1px solid var(--line); border-radius: 7px; padding: 9px 12px; margin: 8px 0 12px; page-break-inside: avoid; }
+  .why  { background: var(--accent-soft); border-color: #c4d7f5; }
+  .done { background: var(--ok-soft); border-color: #bfe3cc; }
+  .warn { background: var(--warn-soft); border-color: #f2d3a8; }
+  .newb { background: var(--new-soft); border-color: #dccbf0; }
+  .box .t { font-weight: 700; margin-bottom: 3px; display: block; }
+  .why .t { color: var(--accent); } .done .t { color: var(--ok); } .warn .t { color: var(--warn); } .newb .t { color: var(--new); }
+  .tag { display: inline-block; font-size: 8pt; font-weight: 700; padding: 0 6px; border-radius: 9px; margin-right: 3px; }
+  .tag.d { background: var(--ok-soft); color: var(--ok); }
+  .tag.p { background: var(--warn-soft); color: var(--warn); }
+  .tag.n { background: var(--soft); color: var(--muted); }
+  .tag.w { background: var(--new-soft); color: var(--new); }
+  .phase-head { display: flex; justify-content: space-between; align-items: baseline; }
+  .phase-head .when { font-size: 9.5pt; color: var(--muted); font-weight: 400; }
+  .toc { font-size: 10.5pt; }
+  .toc td { border: none; border-bottom: 1px dotted var(--line); padding: 4px 6px; }
+  .toc .part td { font-weight: 700; color: var(--accent); border-bottom: 1px solid var(--accent); padding-top: 12px; }
+  .flow { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 9pt; margin: 8px 0 12px; }
+  .flow span { border: 1px solid var(--line); border-radius: 5px; padding: 4px 7px; background: var(--soft); }
+  .flow span.me { background: var(--accent); color: #fff; border-color: var(--accent); font-weight: 700; }
+  .flow b { color: var(--muted); }
+  .flow span span { border: none; background: none; padding: 0; color: inherit; opacity: .8; }
+  h2, h3, h4, .phase-head { break-after: avoid; page-break-after: avoid; }
+  tr, .box, pre, li { break-inside: avoid; }
+  .small { font-size: 8.8pt; color: var(--muted); }
+  .check li { list-style: none; margin-left: -16px; }
+  .check li::before { content: "☐ "; color: var(--muted); }
+</style>
+</head>
+<body>
+
+<!-- ============ 표지 ============ -->
+<section class="page cover">
+  <div class="kicker">THE-HAND · 7조 · 제스처 판별 담당</div>
+  <h1>제스처 판별 모듈<br>구현 계획 및 실행 가이드</h1>
+  <div class="sub">지금부터 최종 제출(12/13)까지 무엇을, 어떤 순서로, 어떻게 할지</div>
+  <table class="meta">
+    <tr><td>담당</td><td>제스처 담당 (그리퍼·클러치·높이 모드 판별, 데이터 수집·라벨링, 성능 평가)</td></tr>
+    <tr><td>기준일</td><td>2026-11-11 (11주차)</td></tr>
+    <tr><td>코드 위치</td><td><code>C:\Dev\P_project</code> · 테스트 44개 통과 · <code>.venv</code> (Python 3.11.9)</td></tr>
+    <tr><td>문서 구성</td><td>1부 큰 그림 → 2부 단계별 세부 계획·가이드 → 3부 부록 (명령어, 용어, 문제 해결)</td></tr>
+  </table>
+  <div class="box why" style="margin-top:26px">
+    <span class="t">이 문서 읽는 법</span>
+    1부만 보면 전체 흐름과 일정이 잡힙니다. 실제로 작업할 때는 2부에서 해당 단계를 펴고 <b>할 일 → 명령어 → 완료 기준</b> 순서대로 따라가면 됩니다.
+    단계마다 <span class="tag w">새로 만들 것</span> 표시가 있는 부분은 아직 코드가 없어서 같이 구현할 부분입니다.
+  </div>
+</section>
+
+<!-- ============ 목차 ============ -->
+<section class="page">
+  <h2>목차</h2>
+  <table class="toc">
+    <tr class="part"><td colspan="2">1부 · 큰 그림</td></tr>
+    <tr><td>1.1</td><td>내 역할과 최종 목표</td></tr>
+    <tr><td>1.2</td><td>지금 상태 (9단계 중 어디까지 왔나)</td></tr>
+    <tr><td>1.3</td><td>앞으로의 로드맵: 단계 A~I 한눈에</td></tr>
+    <tr><td>1.4</td><td>주차별 일정</td></tr>
+    <tr><td>1.5</td><td>주요 위험과 대응</td></tr>
+    <tr class="part"><td colspan="2">2부 · 단계별 세부 계획과 가이드</td></tr>
+    <tr><td>A</td><td>웹캠·촬영 환경 확인 <span class="small">— 11주차</span></td></tr>
+    <tr><td>B</td><td>팀 합의 3건 (MediaPipe 버전, /hand/state, 제스처 후보) <span class="small">— 11주차</span></td></tr>
+    <tr><td>C</td><td>파일럿 수집 + 규칙 임계값 튜닝 <span class="small">— 11주차</span></td></tr>
+    <tr><td>D</td><td>팀원 데이터 수집 <span class="small">— 11~12주차</span></td></tr>
+    <tr><td>E</td><td>클러치 후보 비교·확정 <span class="small">— 12주차</span></td></tr>
+    <tr><td>F</td><td>분류기 학습·선정 <span class="small">— 12주차</span></td></tr>
+    <tr><td>G</td><td>실시간 데모 통합 <span class="small">— 12주차</span></td></tr>
+    <tr><td>H</td><td>Ubuntu + ROS 2 노드 연동 <span class="small">— 12~13주차</span></td></tr>
+    <tr><td>I</td><td>실물 이식 지원 · 사용자 실험 · 최종 평가 <span class="small">— 13~15주차</span></td></tr>
+    <tr class="part"><td colspan="2">3부 · 부록</td></tr>
+    <tr><td>부록 1</td><td>명령어 모음</td></tr>
+    <tr><td>부록 2</td><td>용어·개념 사전</td></tr>
+    <tr><td>부록 3</td><td>막히면 보는 문제 해결표</td></tr>
+    <tr><td>부록 4</td><td>팀·외부에 확인할 것 체크리스트</td></tr>
+  </table>
+</section>
+
+<!-- ============ 1부 ============ -->
+<section class="page">
+  <h2>1부 · 큰 그림</h2>
+
+  <h3>1.1 내 역할과 최종 목표</h3>
+  <p>시스템 전체에서 내 모듈은 <b>"손 모양을 보고 지금 어떤 명령인지 판단하는 부분"</b>입니다. 손 좌표는 팀원A 모듈에서 받고, 판단 결과는 <code>/hand/state</code> 토픽으로 팀원B 노드에 넘깁니다.</p>
+  <div class="flow">
+    <span>웹캠</span><b>→</b><span>손 추적 21점<br><span class="small">팀원A</span></span><b>→</b><span>떨림 필터<br><span class="small">팀원A</span></span><b>→</b>
+    <span class="me">제스처 판별<br>클러치 상태 머신<br><span style="font-weight:400">제스처 담당</span></span><b>→ /hand/state →</b>
+    <span>명령 생성<br><span class="small">팀원B</span></span><b>→</b><span>안전 감시·로봇<br><span class="small">팀원C</span></span>
+  </div>
+
+  <table>
+    <tr><th style="width:28%">목표 지표 (계획서)</th><th style="width:16%">목표값</th><th>의미 / 측정 방법</th></tr>
+    <tr><td>제스처 정확도</td><td>95% 이상</td><td>학습에 안 쓴 사람의 데이터로 프레임 단위 정확도·macro-F1</td></tr>
+    <tr><td>비조작 동작 오작동률</td><td>5% 이하</td><td>물 마시기·머리 만지기·손 흔들기·휴대폰·가리키기 5종 × 4회 중 로봇이 잘못 켜진 비율</td></tr>
+    <tr><td>활성화 실패율</td><td>10% 이하</td><td>일부러 클러치를 했을 때 3초 안에 켜지지 않은 비율</td></tr>
+    <tr><td>처리 속도</td><td>30 FPS</td><td>ZIO 웹캠 최대가 30 FPS이므로 그대로 유지되는지</td></tr>
+    <tr><td>판별 시간</td><td>5 ms 미만</td><td>프레임 한 장의 특징 추출 + 판별에 걸리는 시간</td></tr>
+  </table>
+
+  <h3>1.2 지금 상태</h3>
+  <table>
+    <tr><th style="width:6%">단계</th><th style="width:30%">내용</th><th style="width:16%">상태</th><th>남은 일</th></tr>
+    <tr><td>1</td><td>/hand/state 형식</td><td><span class="tag p">초안</span></td><td>팀 합의 (→ B)</td></tr>
+    <tr><td>2</td><td>클러치·높이 제스처 후보</td><td><span class="tag p">초안</span></td><td>데이터로 비교해 확정 (→ E)</td></tr>
+    <tr><td>3</td><td>수집 스크립트</td><td><span class="tag d">코드 완성</span></td><td>실제 수집 (→ C, D)</td></tr>
+    <tr><td>4</td><td>전처리·특징 (78차원)</td><td><span class="tag d">완료</span></td><td>—</td></tr>
+    <tr><td>5</td><td>규칙 판별기</td><td><span class="tag p">코드 완성</span></td><td>실제 손으로 임계값 튜닝, 특히 엄지 (→ C)</td></tr>
+    <tr><td>6</td><td>분류기 학습·비교</td><td><span class="tag p">코드 완성</span></td><td>실데이터로 학습·선정 (→ F)</td></tr>
+    <tr><td>7</td><td>안정화·클러치 상태 머신</td><td><span class="tag d">완료</span></td><td>실시간에서 체감 확인 (→ G)</td></tr>
+    <tr><td>8</td><td>평가 스크립트</td><td><span class="tag p">코드 완성</span></td><td>실데이터 평가 (→ E, I)</td></tr>
+    <tr><td>9</td><td>ROS 2 노드</td><td><span class="tag n">미착수</span></td><td>Ubuntu 설치 후 (→ H)</td></tr>
+  </table>
+  <div class="box warn"><span class="t">한 줄 요약</span>코드는 거의 다 있고, <b>실제 손 데이터가 하나도 없는 상태</b>입니다. 지금까지의 숫자는 모두 가짜 손 데이터로 낸 것이라 보고서에 쓸 수 없습니다. 앞으로의 핵심은 "실데이터로 검증·튜닝 → ROS로 연결"입니다.</div>
+</section>
+
+<section class="page">
+  <h3>1.3 앞으로의 로드맵: 단계 A~I</h3>
+  <table>
+    <tr><th style="width:5%"></th><th style="width:24%">단계</th><th style="width:12%">주차</th><th>핵심 산출물</th><th style="width:15%">완료 기준</th></tr>
+    <tr><td>A</td><td>웹캠·촬영 환경 확인</td><td>11</td><td>ZIO 웹캠 설정값, 촬영 위치 기록</td><td>30 FPS 유지</td></tr>
+    <tr><td>B</td><td>팀 합의 3건</td><td>11</td><td>hand_state_format v0.2, MediaPipe 버전 통일</td><td>단톡 합의</td></tr>
+    <tr><td>C</td><td>파일럿 수집 + 규칙 튜닝</td><td>11</td><td>내 손 데이터(P01), 조정된 <code>RuleConfig</code></td><td>8개 모양 규칙 판별 OK</td></tr>
+    <tr><td>D</td><td>팀원 데이터 수집</td><td>11~12</td><td><code>data/raw/*.csv</code> (P01~P04)</td><td>라벨별 분량 충족</td></tr>
+    <tr><td>E</td><td>클러치 후보 비교·확정</td><td>12</td><td>후보별 오작동률·활성화 실패율 비교표</td><td>클러치 1개 확정</td></tr>
+    <tr><td>F</td><td>분류기 학습·선정</td><td>12</td><td><code>models/gesture_clf.joblib</code>, 혼동행렬</td><td>F1·5ms 기준 선정</td></tr>
+    <tr><td>G</td><td>실시간 데모 <span class="tag w">새로 만들 것</span></td><td>12</td><td><code>scripts/live_demo.py</code></td><td>웹캠으로 클러치·그리퍼 시연</td></tr>
+    <tr><td>H</td><td>Ubuntu + ROS 2 노드 <span class="tag w">새로 만들 것</span></td><td>12~13</td><td><code>gesture_node</code>, <code>HandState.msg</code></td><td>/hand/state 30 Hz 발행</td></tr>
+    <tr><td>I</td><td>실물·사용자 실험·최종 평가</td><td>13~15</td><td>최종 평가표·그래프, 보고서 절</td><td>목표 지표 측정 완료</td></tr>
+  </table>
+  <p class="small">순서의 이유: A(장비) → C(내 손으로 규칙 확인) → D(남의 손으로 데이터 확보) → E·F(데이터로 결정) → G·H(실시간·ROS 연결) → I(최종 측정). B는 팀원 답을 기다려야 하므로 A와 동시에 바로 던져 둡니다.</p>
+
+  <h3>1.4 주차별 일정</h3>
+  <table>
+    <tr><th style="width:22%">주차</th><th>내 작업</th><th style="width:28%">팀 일정 (계획서)</th></tr>
+    <tr><td><b>11주차</b><br>11/10~11/16</td><td>A 웹캠 확인 · B 단톡 공유 · C 파일럿 수집·규칙 튜닝 · D 팀원 수집 약속 잡기</td><td>규칙 판별·분류기 1차·연동</td></tr>
+    <tr><td><b>12주차</b><br>11/17~11/23</td><td>D 수집 완료 · E 클러치 확정 · F 분류기 선정 · G 실시간 데모 · Ubuntu 듀얼부팅</td><td>시뮬레이션 필수 범위</td></tr>
+    <tr><td><b>13주차</b><br>11/24~11/30</td><td>H ROS 2 노드 · Gazebo에서 팀원B 노드와 연결 · 실물 이식 지원</td><td>실물 이식 (비상정지 필요)</td></tr>
+    <tr><td><b>14주차</b><br>12/1~12/7</td><td>I 사용자 실험 수집 · 최종 평가</td><td>사용자 실험</td></tr>
+    <tr><td><b>15주차</b><br>12/8~12/13</td><td>I 결과 정리 · 보고서 · 발표 자료</td><td>2차 멘토링(12/11 전) · 최종 제출 12/13</td></tr>
+  </table>
+
+  <h3>1.5 주요 위험과 대응</h3>
+  <table>
+    <tr><th style="width:30%">위험</th><th>대응</th></tr>
+    <tr><td>엄지 펴짐 판별이 불안정 (샤카·엄지 척)</td><td>C에서 집중 튜닝. 그래도 안 되면 클러치를 락🤘으로 (엄지를 안 씀)</td></tr>
+    <tr><td>참여자가 팀원 4명뿐 → "학습에 안 쓴 사람"으로 최종 평가 불가</td><td>개발은 4명 교차검증, 최종 평가는 외부 참여자 필요 → <b>IRB 면제 여부 팀 안건으로 빨리</b></td></tr>
+    <tr><td>Ubuntu(Python 3.12)에서 mediapipe 1.2.2 설치 실패</td><td>H 시작 전에 가장 먼저 확인. 안 되면 버전 조정 또는 Python 3.11 별도 설치</td></tr>
+    <tr><td>OMX-AI 3팀 공유로 실물 시간이 부족</td><td>내 모듈은 Gazebo에서 먼저 검증 → 실물 시간에는 통합만</td></tr>
+    <tr><td>30 FPS 상한 (프레임 간격 33ms)</td><td>판별을 5ms 안에 유지해 지연을 늘리지 않음. 클러치 0.5초 = 약 15프레임</td></tr>
+  </table>
+</section>
+
+<!-- ============ 2부 ============ -->
+<section class="page">
+  <h2>2부 · 단계별 세부 계획과 가이드</h2>
+
+  <div class="phase-head"><h3>A. 웹캠·촬영 환경 확인</h3><span class="when">11주차 · 약 30분</span></div>
+  <div class="box why"><span class="t">왜 하나</span>모든 데이터가 이 웹캠으로 찍힙니다. 처음에 설정·위치를 정해 두지 않으면 나중에 찍은 데이터와 조건이 달라져 비교가 안 됩니다.</div>
+  <ol>
+    <li><b>ZIO-C960 연결 후 얼굴 추적 끄기</b> — 화면이 사람을 따라 움직이면 좌표가 틀어집니다. 전용 앱/설정이 있으면 끄고, 없으면 몸을 움직여 화면이 따라오는지 확인합니다.</li>
+    <li><b>환경 확인 스크립트 실행</b>
+<pre>.venv 터미널에서
+python scripts\check_env.py --camera 1                      <span class="c"># 기본 1280×720</span>
+python scripts\check_env.py --camera 1 --width 1920 --height 1080   <span class="c"># 비교용</span></pre>
+      화면 위쪽의 <code>FPS</code>와 <code>infer ms</code>(손 인식 시간)를 봅니다. 두 해상도 중 FPS가 30에 가깝고 손 인식이 안정적인 쪽을 고릅니다. <b>보통 1280×720 권장</b>: MediaPipe가 어차피 내부에서 작게 줄여 처리하므로 해상도를 올려도 이득이 적습니다.</li>
+    <li><b>깜빡임 확인</b> — 형광등·LED 아래에서 가로 줄무늬나 밝기 깜빡임이 보이는지 봅니다. 보이면 자연광이 있는 자리로 옮기거나 조명을 바꿉니다.</li>
+    <li><b>촬영 위치 고정·기록</b> — 사용자 정면, 손은 카메라에서 <b>50cm 이상</b>, 배경은 단순하게. 웹캠 위치를 사진으로 찍어 두고 높이·거리를 메모합니다(재현용).</li>
+  </ol>
+  <div class="box done"><span class="t">완료 기준</span>FPS가 27~30을 유지하고, 손을 천천히 움직여도 21개 점이 끊기지 않음. 해상도·위치·조명이 메모로 남아 있음.</div>
+  <div class="box warn"><span class="t">막히면</span>
+    · 화면이 안 뜨거나 내장 카메라가 뜸 → <code>--camera 0</code>, <code>--camera 2</code>로 바꿔 보기<br>
+    · FPS가 15 근처 → 조명을 밝게(어두우면 웹캠이 스스로 FPS를 낮춤), <code>--no-mjpg</code>와 비교해 MJPG가 적용됐는지 확인</div>
+
+  <div class="phase-head"><h3>B. 팀 합의 3건</h3><span class="when">11주차 · 오늘~내일 단톡에 올리기</span></div>
+  <div class="box why"><span class="t">왜 하나</span>내 모듈은 입력(팀원A)과 출력(팀원B) 양쪽에 걸쳐 있어서, 형식을 먼저 맞추지 않으면 13주차 연동 때 다시 고쳐야 합니다. 답을 받는 데 시간이 걸리니 <b>가장 먼저</b> 보냅니다.</div>
+  <table>
+    <tr><th style="width:24%">안건</th><th style="width:16%">대상</th><th>보낼 내용</th></tr>
+    <tr><td>MediaPipe 1.2.2 통일</td><td>팀원A</td><td>HANDOFF.md 7절 초안 그대로. 1.x는 Tasks API라는 점, Ubuntu(3.12) 설치 확인 부탁</td></tr>
+    <tr><td>/hand/state 형식</td><td>팀원B, 팀원A</td><td><code>docs/hand_state_format.md</code> + 질문 6개. 특히 <b>Q1 상태 머신을 어디서 돌릴지</b>, <b>Q5 팀원A → 나 연결 방식</b></td></tr>
+    <tr><td>제스처 후보·설계 결정</td><td>전원</td><td><code>docs/gesture_candidates.md</code> 요약 + "비조작 동작 프레임은 학습에서 제외" 결정 + <b>데이터 수집 협조(1인 30분)</b> 요청</td></tr>
+  </table>
+  <div class="box done"><span class="t">완료 기준</span>답을 받으면 <code>hand_state_format.md</code>를 v0.2로 고치고 결정 사항을 문서 맨 위에 적습니다.</div>
+</section>
+
+<section class="flowsec">
+  <div class="phase-head"><h3>C. 파일럿 수집 + 규칙 임계값 튜닝</h3><span class="when">11주차 · 2~3시간</span></div>
+  <div class="box why"><span class="t">왜 하나</span>규칙 판별기(<code>rules.py</code>)의 임계값은 가짜 손 기준으로 정한 값입니다. 진짜 손은 엄지 각도가 덜 펴져 보이는 등 차이가 있어서, <b>내 손으로 먼저 맞춰 본 뒤</b> 팀원 데이터를 받아야 수집을 두 번 하지 않습니다.</div>
+
+  <h4>개념: 규칙 판별기는 어떻게 판단하나</h4>
+  <p>손가락마다 관절 각도를 잽니다. 쭉 편 손가락은 관절이 거의 일직선(180°)이고, 접으면 각도가 작아집니다. 각도가 임계값보다 크면 "펴짐(1)", 작으면 "접힘(0)"으로 보고, 5개 손가락 패턴(예: 샤카 = <code>10001</code>)으로 제스처를 정합니다.</p>
+  <table>
+    <tr><th style="width:30%"><code>RuleConfig</code> 값</th><th style="width:12%">현재</th><th>뜻</th></tr>
+    <tr><td><code>finger_extended_deg</code></td><td>150°</td><td>검지~소지: 두 관절 각도 평균이 이보다 크면 펴짐</td></tr>
+    <tr><td><code>thumb_extended_deg</code></td><td>140°</td><td>엄지 관절 각도 기준 (엄지는 굽는 방향이 달라 따로 둠)</td></tr>
+    <tr><td><code>thumb_away_dist</code></td><td>0.6</td><td>엄지 끝이 검지 뿌리에서 이만큼 떨어져야 펴짐 (손바닥 크기 = 1)</td></tr>
+    <tr><td><code>ok_touch_dist</code></td><td>0.25</td><td>엄지 끝과 검지 끝이 이보다 가까우면 OK의 "맞닿음"</td></tr>
+  </table>
+
+  <h4>할 일</h4>
+  <ol>
+    <li><b>내 손으로 파일럿 수집</b> — 수집 화면 둘째 줄에 규칙 판별 결과와 손가락 패턴(예: <code>rule: call (0.82) 10001</code>)이 실시간으로 나옵니다. 녹화하면서 동시에 규칙이 맞는지 눈으로 확인할 수 있습니다.
+<pre>python scripts\collect_landmarks.py --participant P01 --session pilot --condition bright_front --camera 1
+<span class="c"># 1~9 키: 라벨 선택 (palm,fist,peace,call,rock,ok,like,one,none)</span>
+<span class="c"># SPACE: 녹화 시작/정지 (한 번 = trial 1개)   q: 종료</span></pre>
+      라벨마다 3회 × 3초 정도, 손을 조금씩 기울이거나 거리를 바꿔 가며 찍습니다.</li>
+    <li><b>틀리는 경우 메모</b> — 예: "샤카인데 <code>00001</code>로 나옴 → 엄지가 접힘으로 판정됨".</li>
+    <li><b>각도 분포 확인</b> <span class="tag w">같이 만들 것</span> — 파일럿 CSV에서 라벨별·손가락별 각도를 히스토그램으로 그리는 노트북(<code>notebooks/rule_tuning.ipynb</code>)을 만듭니다. "펴진 엄지"와 "접힌 엄지" 각도 분포가 겹치지 않는 사이에 임계값을 두는 것이 원리입니다.</li>
+    <li><b>임계값 수정 → 테스트</b> — <code>src/gesture/rules.py</code>의 <code>RuleConfig</code> 기본값을 바꾸고 <code>python -m pytest -q</code>. 테스트가 깨지면 가짜 손 기준 테스트라서 그런지 확인한 뒤 함께 조정합니다.</li>
+  </ol>
+  <div class="box done"><span class="t">완료 기준</span>8개 모양(palm, fist, peace, call, rock, ok, like, one)을 정면과 약간 기울인 상태에서 해 봤을 때 규칙 판별이 대부분 맞음. 특히 <b>call·like의 엄지</b>. 바꾼 값과 이유를 <code>gesture_candidates.md</code>에 기록.</div>
+  <div class="box warn"><span class="t">막히면</span>엄지가 끝까지 불안정하면 각도 대신 거리 기준(<code>thumb_away_dist</code>) 비중을 높이거나, 클러치 1순위를 락🤘으로 바꾸는 근거로 씁니다. 이것도 중요한 결과이니 기록해 두세요. 규칙이 완벽할 필요는 없습니다. F단계의 학습 분류기가 보완합니다.</div>
+  <p class="small">※ 파일럿 데이터(<code>--session pilot</code>)는 튜닝에 쓴 데이터라 최종 평가에서는 빼야 합니다.</p>
+</section>
+
+<section class="flowsec">
+  <div class="phase-head"><h3>D. 팀원 데이터 수집</h3><span class="when">11~12주차 · 1인당 약 30분</span></div>
+  <div class="box why"><span class="t">왜 하나</span>분류기 학습(F), 클러치 비교(E), 평가(I) 모두 이 데이터로 합니다. 사람마다 손 크기·습관이 달라서 <b>여러 사람</b>의 데이터가 꼭 필요합니다. 영상은 저장하지 않고 손 좌표만 CSV로 남깁니다(개인정보·용량).</div>
+
+  <h4>개념: 참여자·조건·trial</h4>
+  <ul>
+    <li><b>참여자(participant)</b>: P01(나), P02~P04(팀원), P05~(외부). 학습·평가를 <b>사람 단위로 나누는</b> 기준입니다. 같은 사람이 학습과 평가 양쪽에 있으면 점수가 부풀려집니다.</li>
+    <li><b>조건(condition)</b>: 조명·각도 등 촬영 상황. 예) <code>bright_front</code>, <code>dim_front</code>, <code>bright_side</code>. 조건별 정확도를 따로 보고 약점을 찾습니다.</li>
+    <li><b>trial</b>: SPACE로 녹화를 시작해서 멈출 때까지의 한 구간. 오작동률·활성화 실패율은 trial 단위로 셉니다.</li>
+  </ul>
+
+  <h4>수집 세트 1 · 제스처 (분류기 학습·정확도용)</h4>
+<pre>python scripts\collect_landmarks.py --participant P02 --condition bright_front --camera 1
+python scripts\collect_landmarks.py --participant P02 --condition dim_front    --camera 1  <span class="c"># 선택</span>
+python scripts\collect_landmarks.py --participant P02 --condition bright_side  --camera 1  <span class="c"># 선택</span></pre>
+  <table>
+    <tr><th style="width:26%">라벨</th><th>찍는 방법</th><th style="width:22%">분량 (1인·1조건)</th></tr>
+    <tr><td>palm, fist, peace, call, rock, ok, like, one</td><td>모양을 유지한 채 손을 천천히 움직이고 살짝 기울이기</td><td>라벨당 5 trial × 3초 (≈ 450프레임)</td></tr>
+    <tr><td><b>none</b></td><td>명령이 <b>아닌</b> 손 모양: 반쯤 쥔 손, 손가락 3개, 손 옆면, 편하게 늘어뜨린 손 등</td><td>5 trial × 3초, 매번 다른 모양</td></tr>
+  </table>
+
+  <h4>수집 세트 2 · 평가 (오작동률·활성화 실패율용)</h4>
+<pre>python scripts\collect_landmarks.py --participant P02 --camera 1 ^
+  --labels nonop_drink,nonop_head,nonop_wave,nonop_phone,nonop_point,activate_call,activate_rock,activate_ok</pre>
+  <table>
+    <tr><th style="width:26%">라벨</th><th>찍는 방법</th><th style="width:22%">분량 (1인)</th></tr>
+    <tr><td>nonop_* (5종)</td><td>물 마시기·머리 만지기·손 흔들기·휴대폰 보기·물건 가리키기를 <b>자연스럽게</b>. 클러치를 의식하지 말 것</td><td>동작당 4 trial (계획서 5종 × 4회)</td></tr>
+    <tr><td>activate_call / rock / ok</td><td>손을 편하게 두고 녹화 시작 → 신호를 주면 해당 클러치 제스처를 <b>0.5초 이상</b> 유지</td><td>후보당 10 trial, trial당 3~5초</td></tr>
+  </table>
+
+  <h4>수집 후 확인</h4>
+<pre>python -c "import glob,pandas as pd; df=pd.concat(pd.read_csv(f) for f in glob.glob('data/raw/*.csv')); print(df.groupby(['participant','label']).trial_id.nunique())"</pre>
+  <p>참여자·라벨별 trial 수가 계획대로인지 봅니다. 손 인식 실패 비율도 <code>hand_detected</code> 평균으로 확인할 수 있습니다.</p>
+  <ul class="check">
+    <li>수집 로그 작성: 날짜, 장소, 조명, 웹캠 위치, 참여자 ID, 특이사항 (보고서의 "실험 조건"이 됩니다)</li>
+    <li>동의: 손 좌표만 저장하고 영상은 저장하지 않는다고 미리 설명</li>
+  </ul>
+  <div class="box done"><span class="t">완료 기준</span>P01~P04 모두 세트 1(bright_front 이상)과 세트 2를 완료. 라벨별 trial 수 확인.</div>
+  <div class="box warn"><span class="t">주의: 최종 평가용 사람은 따로</span>계획서 기준으로 최종 지표는 <b>학습·클러치 선정에 쓰지 않은 사람</b>으로 재야 합니다. 팀원 4명은 개발용으로 쓰고, 14주차에 외부 참여자를 받으려면 IRB 면제 여부를 지금 팀 안건으로 올려야 합니다.</div>
+</section>
+
+<section class="flowsec">
+  <div class="phase-head"><h3>E. 클러치 후보 비교·확정</h3><span class="when">12주차 · 1~2시간</span></div>
+  <div class="box why"><span class="t">왜 하나</span>클러치는 로봇을 켜고 끄는 스위치라서 <b>평소 손짓에 잘못 켜지지 않는 것</b>(오작동률)과 <b>하려고 할 때 잘 켜지는 것</b>(활성화 실패율)이 둘 다 중요합니다. 계획서대로 데이터로 비교해 확정합니다.</div>
+  <h4>할 일</h4>
+  <ol>
+    <li>후보 3개를 같은 데이터로 평가합니다 (C에서 맞춘 규칙 기반).
+<pre>python scripts\evaluate.py --data "data\raw\*.csv" --clutch call --out results\clutch_call.json
+python scripts\evaluate.py --data "data\raw\*.csv" --clutch rock --out results\clutch_rock.json
+python scripts\evaluate.py --data "data\raw\*.csv" --clutch ok   --out results\clutch_ok.json</pre></li>
+    <li>결과를 아래 표로 정리합니다. 수치 뒤 괄호는 95% 신뢰구간입니다(참여자 단위).
+      <table>
+        <tr><th>후보</th><th>오작동률 (≤5%)</th><th>가장 잘 오인되는 동작</th><th>활성화 실패율 (≤10%)</th><th>활성화까지 평균 시간</th><th>사용 편의 (설문)</th></tr>
+        <tr><td>call 🤙</td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td>rock 🤘</td><td></td><td></td><td></td><td></td><td></td></tr>
+        <tr><td>ok 👌</td><td></td><td></td><td></td><td></td><td></td></tr>
+      </table></li>
+    <li><b>결정 규칙</b>: ① 오작동률 5% 이하를 만족하는 후보 중 → ② 활성화 실패율이 낮은 것 → ③ 비슷하면 팀원이 하기 편하다고 한 것.</li>
+    <li>확정한 후보를 <code>src/gesture/state_machine.py</code>의 <code>default_roles()</code>에 반영하고 테스트를 실행합니다. <code>gesture_candidates.md</code>를 v1.0(확정)으로 고쳐 팀에 공유합니다.</li>
+  </ol>
+  <div class="box done"><span class="t">완료 기준</span>비교표와 결정 이유가 문서에 남고, 코드 기본값이 확정 후보로 바뀜.</div>
+  <div class="box warn"><span class="t">주의</span>여기서 쓴 참여자의 비조작 데이터는 클러치를 "고르는 데" 쓴 것이므로 최종 오작동률 평가에서는 제외합니다(계획서 설계 결정 6). 결과가 모두 목표에 못 미치면 <code>clutch_hold_s</code>(0.5초)·<code>stable_frames</code>(3) 조정도 함께 검토합니다.</div>
+
+  <div class="phase-head"><h3>F. 분류기 학습·선정</h3><span class="when">12주차 · 1~2시간</span></div>
+  <div class="box why"><span class="t">왜 하나</span>규칙은 사람이 정한 기준이라 애매한 손에 약합니다. 학습 분류기는 데이터에서 직접 경계를 배웁니다. <b>규칙 · 랜덤 포레스트 · MLP</b> 세 가지를 같은 조건으로 비교해 정확도와 속도 기준으로 하나를 고릅니다.</div>
+  <h4>개념</h4>
+  <ul>
+    <li><b>특징 78차원</b>: 손목을 원점으로, 손바닥 크기를 1로 맞춘 21점 좌표 + 손가락 관절 각도. 왼손은 좌우를 뒤집어 오른손처럼 만듭니다.</li>
+    <li><b>GroupKFold(참여자 단위 교차검증)</b>: 4명이면 "3명으로 학습 → 남은 1명으로 시험"을 4번 돌려 평균. 처음 보는 사람에게도 통하는지를 봅니다.</li>
+    <li><b>macro-F1</b>: 클래스별 F1의 평균. 데이터가 적은 클래스도 똑같이 반영되어 정확도보다 공정합니다.</li>
+  </ul>
+  <h4>할 일</h4>
+<pre>python scripts\train_classifier.py --data "data\raw\*.csv"
+<span class="c"># 결과: results\train_report.json, results\confusion_*.png, models\gesture_clf.joblib</span></pre>
+  <ol>
+    <li><code>train_report.json</code>에서 방법별 정확도·macro-F1·판별 시간을 비교합니다.</li>
+    <li><code>confusion_*.png</code>(혼동행렬)에서 <b>어떤 쌍이 헷갈리는지</b> 봅니다. 예상되는 쌍: like↔fist, rock↔one, peace↔one.</li>
+    <li><b>선정 기준</b>: 판별 5ms 미만인 것 중 macro-F1이 가장 높은 것. 지금까지 측정으로는 랜덤 포레스트가 7.5ms라 그대로는 탈락이고, MLP(0.22ms)가 유력합니다. 랜덤 포레스트가 정확도에서 크게 앞서면 트리 수를 줄여 다시 재 봅니다.</li>
+    <li>선정 모델로 평가: <code>python scripts\evaluate.py --model models\gesture_clf.joblib --clutch (확정 후보)</code></li>
+  </ol>
+  <div class="box done"><span class="t">완료 기준</span>방법 비교표, 혼동행렬, 선정 이유가 정리됨. 참여자 교차검증 macro-F1이 규칙 기반보다 높고 판별이 5ms 미만.</div>
+</section>
+
+<section class="flowsec">
+  <div class="phase-head"><h3>G. 실시간 데모 통합 <span class="tag w">새로 만들 것</span></h3><span class="when">12주차 · 같이 구현 2~3시간</span></div>
+  <div class="box why"><span class="t">왜 하나</span>지금까지는 녹화된 CSV로만 평가했습니다. 실제 사용은 실시간이므로 <b>웹캠 → 판별 → 상태 머신</b>을 한 번에 돌려 클러치·그리퍼가 체감상 자연스러운지 확인해야 합니다. ROS 없이 Windows에서 돌아가므로 팀 시연·멘토링 자료로도 바로 쓸 수 있습니다.</div>
+  <h4>만들 것: <code>scripts/live_demo.py</code></h4>
+  <ul>
+    <li>웹캠(<code>open_camera</code>) → 손 인식(<code>HandDetector</code>) → <code>GestureRecognizer</code>(규칙 또는 학습 모델) → <code>HandState</code></li>
+    <li>화면 표시: 제어 모드(IDLE/PLANAR/HEIGHT/PAUSED), 그리퍼, 높이 입력, 클러치 진행 막대(0.5초), FPS, 판별 ms</li>
+    <li>옵션: <code>--model</code>, <code>--clutch</code>, <code>--camera</code>, <code>--log</code>(HandState를 CSV로 저장)</li>
+  </ul>
+<pre>python scripts\live_demo.py --camera 1 --model models\gesture_clf.joblib --clutch call --log results\live_log.csv</pre>
+  <div class="box newb"><span class="t">덤: 팀원B와 미리 맞춰 보기</span><code>--log</code>로 남긴 HandState 기록을 팀원B에게 주면, ROS 연동 전에도 "이런 값이 이런 순서로 온다"를 보고 명령 생성 로직을 테스트할 수 있습니다.</div>
+  <div class="box done"><span class="t">완료 기준</span>30 FPS 유지, 판별 5ms 미만. 클러치로 켜고 끄기, 손바닥/주먹 그리퍼, V자 높이 모드가 화면에서 의도대로 바뀜. 손을 화면 밖으로 빼면 PAUSED.</div>
+
+  <div class="phase-head"><h3>H. Ubuntu + ROS 2 노드 연동 <span class="tag w">새로 만들 것</span></h3><span class="when">12~13주차</span></div>
+  <div class="box why"><span class="t">왜 하나</span>팀 시스템은 ROS 2로 연결됩니다. 내 모듈의 결과를 <code>/hand/state</code> 토픽으로 내보내야 팀원B 노드가 받아서 Gazebo/로봇을 움직일 수 있습니다.</div>
+  <h4>사전 준비</h4>
+  <ol>
+    <li>Ubuntu 24.04 듀얼부팅 (<code>docs/dev_environment.md</code> B절: BitLocker 복구 키, 100GB, 백업 먼저)</li>
+    <li>ROS 2 Jazzy Desktop + <code>ros-jazzy-ros-gz</code> 설치</li>
+    <li><b>가장 먼저</b>: Ubuntu 기본 Python 3.12에서 <code>pip install mediapipe==1.2.2</code>가 되는지 확인</li>
+    <li>가상환경은 ROS 패키지가 보이도록: <code>python3 -m venv --system-site-packages .venv</code></li>
+  </ol>
+  <h4>구현 순서</h4>
+  <ol>
+    <li><b>메시지 패키지 <code>hand_interfaces</code></b> — <code>msg/HandState.msg</code>를 hand_state_format 합의안대로 작성. 누가 만들지는 B에서 정한 대로.</li>
+    <li><b>노드 <code>gesture_node</code></b> (rclpy) — 지금의 <code>GestureRecognizer</code>를 그대로 불러 쓰고, 결과만 ROS 메시지로 바꿔 발행합니다. 로직을 다시 짜지 않는 것이 핵심입니다.
+<pre>class GestureNode(Node):
+    def __init__(self):
+        super().__init__("gesture_node")
+        qos = QoSProfile(depth=1, reliability=ReliabilityPolicy.BEST_EFFORT)
+        self.pub = self.create_publisher(HandState, "/hand/state", qos)
+        self.rec = GestureRecognizer(aspect, classifier=clf)      <span class="c"># 지금 코드 재사용</span>
+    def on_frame(self, landmarks, handedness, score, stamp):
+        s = self.rec.process(stamp, landmarks, handedness, score) <span class="c"># → 파이썬 HandState</span>
+        self.pub.publish(to_msg(s, stamp))                        <span class="c"># → ROS 메시지</span></pre>
+      입력은 B의 Q5 결정에 따라 ① 팀원A 함수를 같은 노드에서 호출하거나 ② <code>/hand/landmarks</code> 토픽을 구독합니다.</li>
+    <li><b>단독 확인</b>: <code>ros2 topic echo /hand/state</code>(값이 맞는지), <code>ros2 topic hz /hand/state</code>(약 30 Hz)</li>
+    <li><b>연동 확인</b>: 팀원B 노드 + Gazebo를 같이 띄워 클러치 → 손 이동 → 로봇 이동이 이어지는지 확인합니다.</li>
+    <li><b>지연 측정</b>: 메시지의 <code>header.stamp</code>(카메라 캡처 시각)와 수신 시각의 차이를 기록합니다.</li>
+  </ol>
+  <div class="box done"><span class="t">완료 기준</span>Gazebo에서 손동작으로 로봇팔을 켜고·움직이고·집을 수 있음. /hand/state 30 Hz, 지연 수치 기록.</div>
+</section>
+
+<section class="page">
+  <div class="phase-head"><h3>I. 실물 이식 지원 · 사용자 실험 · 최종 평가</h3><span class="when">13~15주차</span></div>
+  <h4>13주차: 실물 이식 지원</h4>
+  <ul>
+    <li>비상정지 스위치가 준비되기 전에는 실물을 움직이지 않습니다(팀원C님 담당, 팀 안건).</li>
+    <li>내 역할: 실물 환경(조명·위치)에서 판별이 흔들리면 <code>stable_frames</code>·클러치 시간·임계값을 조정합니다.</li>
+  </ul>
+  <h4>14주차: 사용자 실험 (최종 평가 데이터)</h4>
+  <ol>
+    <li>참여자: <b>학습·클러치 선정에 쓰지 않은 사람</b> (IRB 결과에 따라 외부 참여자)</li>
+    <li>D와 같은 수집 세트 1·2를 같은 조건으로 수집 (참여자 ID P05~)</li>
+    <li>평가 실행 (최종 모델, 확정 클러치):
+<pre>python scripts\evaluate.py --data "data\raw\P05*.csv" --model models\gesture_clf.joblib --clutch (확정) --out results\final_eval.json</pre>
+      학습에 쓴 참여자가 섞여 있으면 스크립트가 경고합니다. 경고가 없어야 합니다.</li>
+    <li>실시간 지표: live_demo 또는 ROS 노드에서 FPS·판별 시간·지연을 기록합니다.</li>
+  </ol>
+  <h4>15주차: 결과 정리 (보고서·발표)</h4>
+  <table>
+    <tr><th style="width:32%">보고서에 넣을 것</th><th>출처</th></tr>
+    <tr><td>목표 지표 달성표 (5개 지표 × 목표/결과)</td><td><code>final_eval.json</code>, 실시간 측정</td></tr>
+    <tr><td>방법 비교 (규칙·RF·MLP)</td><td><code>train_report.json</code></td></tr>
+    <tr><td>혼동행렬, 조건별 정확도</td><td><code>confusion_*.png</code>, <code>by_condition</code></td></tr>
+    <tr><td>클러치 선정 과정</td><td>E단계 비교표</td></tr>
+    <tr><td>실험 조건·참여자 수·한계</td><td>D·I 수집 로그</td></tr>
+  </table>
+  <div class="box warn"><span class="t">절대 주의</span><code>data/synthetic</code>, <code>results/synthetic</code>의 숫자는 가짜 데이터 결과이므로 보고서·발표에 쓰지 않습니다.</div>
+</section>
+
+<!-- ============ 3부 ============ -->
+<section>
+  <h2>3부 · 부록</h2>
+  <h3>부록 1 · 명령어 모음</h3>
+  <p class="small">모두 VS Code 터미널(프롬프트에 <code>(.venv)</code>)에서 <code>C:\Dev\P_project</code> 기준. <code>(.venv)</code>가 없으면 <code>.venv\Scripts\Activate.ps1</code>.</p>
+  <table class="cmd">
+    <tr><th style="width:24%">목적</th><th>명령어</th></tr>
+    <tr><td>테스트</td><td><code>python -m pytest -q</code></td></tr>
+    <tr><td>웹캠 확인</td><td><code>python scripts\check_env.py --camera 1</code></td></tr>
+    <tr><td>제스처 수집</td><td><code>python scripts\collect_landmarks.py --participant P0X --condition bright_front --camera 1</code></td></tr>
+    <tr><td>평가용 수집</td><td><code>python scripts\collect_landmarks.py --participant P0X --camera 1 --labels nonop_drink,nonop_head,nonop_wave,nonop_phone,nonop_point,activate_call,activate_rock,activate_ok</code></td></tr>
+    <tr><td>학습·비교</td><td><code>python scripts\train_classifier.py --data "data\raw\*.csv"</code></td></tr>
+    <tr><td>평가 (규칙)</td><td><code>python scripts\evaluate.py --data "data\raw\*.csv" --clutch call</code></td></tr>
+    <tr><td>평가 (모델)</td><td><code>python scripts\evaluate.py --data "data\raw\*.csv" --model models\gesture_clf.joblib</code></td></tr>
+    <tr><td>패키지 추가</td><td><code>pip install 패키지==버전</code> 후 <code>requirements.txt</code>에 버전 고정 (pandas는 2.3.3 유지)</td></tr>
+  </table>
+
+  <h3>부록 2 · 용어·개념 사전</h3>
+  <table>
+    <tr><th style="width:22%">용어</th><th>뜻</th></tr>
+    <tr><td>랜드마크</td><td>MediaPipe가 찾는 손의 21개 점(손목 0번, 엄지 끝 4번, 검지 끝 8번 …). x·y는 화면 비율 좌표, z는 상대 깊이</td></tr>
+    <tr><td>정규화</td><td>손 위치·크기와 상관없이 같은 모양이면 같은 숫자가 나오게 맞추는 것 (손목 원점, 손바닥 크기 1, 왼손 반전)</td></tr>
+    <tr><td>클러치</td><td>자동차 클러치처럼 "손 움직임을 로봇에 연결/분리"하는 스위치. 0.5초 유지로 토글</td></tr>
+    <tr><td>상태 머신</td><td>IDLE → PLANAR ⇄ HEIGHT, 손 소실 시 PAUSED처럼 "지금 모드"와 "바뀌는 조건"을 정해 둔 구조</td></tr>
+    <tr><td>stable_frames</td><td>판별 결과가 연속 N프레임(기본 3 ≈ 0.1초) 같아야 인정. 한두 프레임 오인식을 걸러냄</td></tr>
+    <tr><td>clutch_grace_s</td><td>클러치 유지 중 0.15초 이하 끊김은 봐줌. 없으면 활성화 실패율이 매우 높았음</td></tr>
+    <tr><td>hold_position</td><td>정지 후보가 보이거나 그리퍼가 바뀌는 순간 로봇 위치를 즉시 고정하라는 신호</td></tr>
+    <tr><td>오작동률</td><td>비조작 동작 trial 중 한 번이라도 활성화된 비율 (낮을수록 좋음)</td></tr>
+    <tr><td>활성화 실패율</td><td>의도적 클러치 trial 중 3초 안에 활성화 안 된 비율 (낮을수록 좋음)</td></tr>
+    <tr><td>GroupKFold</td><td>같은 사람의 데이터가 학습·시험에 동시에 들어가지 않게 사람 단위로 나눠 교차검증</td></tr>
+    <tr><td>F1 / macro-F1</td><td>정밀도와 재현율의 조화평균 / 그것을 클래스별로 구해 평균낸 값</td></tr>
+    <tr><td>혼동행렬</td><td>행 = 정답, 열 = 예측. 대각선 밖의 칸이 "무엇을 무엇으로 헷갈렸는지"</td></tr>
+    <tr><td>95% 신뢰구간</td><td>참여자별 결과의 흩어짐을 고려해 "진짜 값이 이 범위에 있을 가능성이 높다"는 구간. 사람이 적으면 넓어짐</td></tr>
+    <tr><td>QoS BEST_EFFORT</td><td>ROS 2에서 재전송 없이 최신 값만 빨리 보내는 설정. 30 Hz 센서 데이터에 적합</td></tr>
+  </table>
+</section>
+
+<section class="flowsec">
+  <h3>부록 3 · 막히면 보는 문제 해결표</h3>
+  <table>
+    <tr><th style="width:34%">증상</th><th>확인·해결</th></tr>
+    <tr><td><code>ModuleNotFoundError</code> (cv2, mediapipe 등)</td><td>가상환경이 꺼진 터미널입니다. 프롬프트에 <code>(.venv)</code>가 있는지 확인 → 없으면 <code>.venv\Scripts\Activate.ps1</code></td></tr>
+    <tr><td>웹캠 창이 안 뜸 / 다른 카메라가 뜸</td><td><code>--camera</code> 번호를 0·1·2로 바꿔 보기. 다른 프로그램(줌, 카톡 영상통화)이 웹캠을 쓰고 있는지 확인</td></tr>
+    <tr><td>FPS가 15 이하</td><td>조명을 밝게, MJPG 적용 확인(<code>--no-mjpg</code>와 비교), USB 허브 대신 노트북 포트에 직접 연결</td></tr>
+    <tr><td>손 인식이 자주 끊김</td><td>손을 50cm 이상 떨어뜨리기, 배경 단순하게, 역광 피하기</td></tr>
+    <tr><td>엄지 판정이 반대로 나옴</td><td>C단계 각도 분포로 <code>thumb_extended_deg</code>·<code>thumb_away_dist</code> 조정</td></tr>
+    <tr><td>evaluate.py가 "학습에 쓴 참여자" 경고</td><td>평가 데이터에서 학습 참여자 파일을 빼고 <code>--data</code> 패턴을 좁히기 (예: <code>"data\raw\P05*.csv"</code>)</td></tr>
+    <tr><td>pandas 설치 후 DLL 오류</td><td>Windows 스마트 앱 컨트롤 때문. <code>pip install pandas==2.3.3</code>로 되돌리기</td></tr>
+    <tr><td>OpenCV 이상 동작</td><td><code>pip list</code>에 <code>opencv-python</code>이 같이 있으면 지우고 <code>opencv-contrib-python</code>만 남기기</td></tr>
+    <tr><td>VS Code "잘못된 인터프리터" 경고</td><td>Ctrl+Shift+P → Python: Select Interpreter → <code>.venv</code>. 새 터미널은 <code>PowerShell (.venv)</code> 프로필로 열기</td></tr>
+  </table>
+
+  <h3>부록 4 · 팀·외부에 확인할 것 체크리스트</h3>
+  <h4>이번 주 (11주차)</h4>
+  <ul class="check">
+    <li>[팀원A] MediaPipe 1.2.2 통일 제안, 팀원A 모듈의 출력 형식(함수/토픽)</li>
+    <li>[팀원B·팀원A] /hand/state 초안 + 질문 6개 답변</li>
+    <li>[전원] 제스처 후보·"비조작 학습 제외" 결정 공유, 데이터 수집 일정(1인 30분)</li>
+    <li>[팀 안건] IRB 심의 면제 여부 → 외부 참여자 가능 여부</li>
+    <li>[지도교수] 장비 문의 메일 (노트북, 비상정지 스위치, 삼각대, OMX-AI 사용 팀) — HANDOFF.md 7절 초안</li>
+  </ul>
+  <h4>12주차 이후</h4>
+  <ul class="check">
+    <li>[나] Ubuntu 듀얼부팅 + mediapipe 3.12 설치 확인</li>
+    <li>[팀원B] hand_interfaces 패키지 위치·담당, 팀 저장소 브랜치 규칙(feature 브랜치 → PR)</li>
+    <li>[팀원C] Gazebo 환경과 OMX 패키지 버전 맞추기, 비상정지 준비 상황</li>
+    <li>[다른 2팀] OMX-AI 사용 순서</li>
+    <li>[멘토] 2차 멘토링(12/11 전) 때 보여 줄 데모(G 또는 H 결과)</li>
+  </ul>
+  <div class="box why" style="margin-top:16px"><span class="t">다음 행동 하나</span>ZIO 웹캠을 꽂고 <code>python scripts\check_env.py --camera 1</code>을 실행하는 것부터 시작합니다(A단계). 동시에 B단계 단톡 메시지 3개를 보내 두면 답을 기다리는 동안 C단계로 넘어갈 수 있습니다.</div>
+</section>
+
+</body>
+</html>
