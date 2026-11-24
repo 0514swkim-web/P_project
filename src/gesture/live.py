@@ -18,6 +18,23 @@ from .state_machine import ClutchStateMachine, Mode, roles_for_clutch
 
 CLUTCH_CHOICES = ("call", "rock", "ok", "palm")  # palm = 베이스라인(단순 활성화)
 
+
+def free_output_paths(*paths):
+    """녹화·로그 파일이 이미 있으면 덮어쓰지 않도록 같은 번호(_2, _3 ...)를 붙인 경로를 돌려준다.
+
+    영상과 CSV가 짝이 맞게 모든 경로에 같은 번호를 붙인다. None은 그대로 둔다.
+    (11/24 같은 이름으로 여러 번 실행해 A·B 녹화가 덮어써진 일이 있었음)
+    """
+    from pathlib import Path
+
+    given = [Path(p) if p else None for p in paths]
+    n = 1
+    while True:
+        cand = [p if (p is None or n == 1) else p.with_name(f"{p.stem}_{n}{p.suffix}") for p in given]
+        if not any(p is not None and p.exists() for p in cand):
+            return [str(p) if p is not None else None for p in cand]
+        n += 1
+
 # BGR
 MODE_COLORS = {
     Mode.IDLE: (180, 180, 180),

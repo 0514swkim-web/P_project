@@ -26,7 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
 from src.gesture.camera import HandDetector, open_camera  # noqa: E402
-from src.gesture.live import CLUTCH_CHOICES, LiveSession, draw_overlay, state_row  # noqa: E402
+from src.gesture.live import CLUTCH_CHOICES, LiveSession, draw_overlay, free_output_paths, state_row  # noqa: E402
 from src.gesture.pipeline import GestureRecognizer  # noqa: E402
 
 
@@ -49,6 +49,12 @@ def main():
     p.add_argument("--no-mirror", action="store_true", help="좌우 반전 끄기")
     p.add_argument("--record", default=None, help="오버레이 화면을 mp4로 저장할 경로")
     args = p.parse_args()
+
+    # 같은 이름으로 다시 실행해도 이전 녹화를 덮어쓰지 않게 번호를 붙인다 (영상·CSV 같은 번호)
+    record, log = free_output_paths(args.record, args.log)
+    if (record, log) != (args.record, args.log):
+        print(f"이미 있는 파일이라 새 이름으로 저장합니다: {record or ''} {log or ''}")
+    args.record, args.log = record, log
 
     cap, w, h, cam_fps = open_camera(args.camera, args.width, args.height)
     print(f"웹캠 {args.camera}: {w}x{h} @ {cam_fps:.0f}fps, 판별: {'분류기' if args.model else '규칙'}")

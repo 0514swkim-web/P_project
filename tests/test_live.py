@@ -2,7 +2,7 @@
 import numpy as np
 
 from src.gesture.features import normalize_landmarks
-from src.gesture.live import LiveSession, draw_overlay, state_row
+from src.gesture.live import LiveSession, draw_overlay, free_output_paths, state_row
 from src.gesture.pipeline import GestureRecognizer
 from src.gesture.rules import RuleConfig, finger_metrics, finger_states
 from src.gesture.state_machine import Mode
@@ -84,3 +84,16 @@ def test_state_row_and_overlay():
         frame = np.zeros((720, 1280, 3), np.uint8)
         draw_overlay(frame, r, RuleConfig(), s.clutch, fps=30.0, detail=True)
         assert frame.any()  # 뭔가 그려졌음
+
+
+def test_free_output_paths_never_overwrite(tmp_path):
+    mp4, csv = tmp_path / "T01_A.mp4", tmp_path / "T01_A.csv"
+    # 없으면 그대로
+    assert free_output_paths(str(mp4), str(csv)) == [str(mp4), str(csv)]
+    # 하나라도 있으면 둘 다 같은 번호
+    csv.write_text("x")
+    assert free_output_paths(str(mp4), str(csv)) == [str(tmp_path / "T01_A_2.mp4"), str(tmp_path / "T01_A_2.csv")]
+    (tmp_path / "T01_A_2.mp4").write_text("x")
+    assert free_output_paths(str(mp4), str(csv))[0] == str(tmp_path / "T01_A_3.mp4")
+    # 지정 안 한 쪽은 None 유지
+    assert free_output_paths(None, str(csv)) == [None, str(tmp_path / "T01_A_2.csv")]
