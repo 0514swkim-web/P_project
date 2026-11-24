@@ -35,6 +35,7 @@
 - 스마트 앱 컨트롤 때문에 pandas는 2.3.3 (3.x 차단됨)
 - 스마트 앱 컨트롤 때문에 matplotlib는 3.10.9 (11/21: 3.11.2의 ft2font DLL 차단 → mediapipe import 실패. mediapipe가 내부에서 matplotlib을 불러옴)
 - OpenCV는 `opencv-contrib-python`만
+- 웹캠 MJPG는 해상도·FPS 설정 **뒤에** 요청해야 적용됨 (11/24: 먼저 요청하면 ZIO-C960이 YUY2 1280×720 5 FPS, 뒤에 요청하면 MJPG 30 FPS). `camera.open_camera()`에 반영
 - mediapipe 1.x는 Tasks API (`mp.solutions` 없음)
 
 ---

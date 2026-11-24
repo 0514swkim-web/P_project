@@ -18,17 +18,18 @@ def open_camera(index: int = 0, width: int = 1280, height: int = 720, fps: int =
     """웹캠을 열고 (cap, 실제 너비, 실제 높이, 실제 FPS)를 돌려준다.
 
     ZIO-C960은 USB 2.0이라 큰 해상도에서 30 FPS를 내려면 MJPG(압축) 전송이 필요하다.
-    MJPG는 해상도 설정보다 먼저 요청해야 적용되는 웹캠이 많다.
+    Windows DirectShow에서는 MJPG를 해상도·FPS **다음에** 요청해야 적용된다
+    (11/24 ZIO-C960 실측: 먼저 요청하면 YUY2로 남아 1280x720에서 5 FPS, 나중에 요청하면 MJPG 30 FPS).
     """
     backend = cv2.CAP_DSHOW if os.name == "nt" else cv2.CAP_V4L2
     cap = cv2.VideoCapture(index, backend)
     if not cap.isOpened():
         raise RuntimeError(f"웹캠 {index}번을 열 수 없습니다.")
-    if mjpg:
-        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, width)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, height)
     cap.set(cv2.CAP_PROP_FPS, fps)
+    if mjpg:
+        cap.set(cv2.CAP_PROP_FOURCC, cv2.VideoWriter_fourcc(*"MJPG"))
     w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
     h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
     f = cap.get(cv2.CAP_PROP_FPS)

@@ -11,7 +11,7 @@
 ## 작업 규칙
 - 가상환경: `.venv` (Python 3.11.9). 실행은 `.venv\Scripts\python` 또는 활성화 후 `python`.
 - 테스트: `python -m pytest -q` (웹캠 불필요, 52개 통과 상태)
-- 웹캠: 팀 웹캠 **ZIO-C960** = `--camera 1` (내장 0번). 최대 30 FPS, USB 2.0 → MJPG 필수, 손은 50cm 이상.
+- 웹캠: 팀 웹캠 **ZIO-C960** = `--camera 1` (내장 0번). 최대 30 FPS, USB 2.0 → MJPG 필수(해상도·FPS 설정 뒤에 요청, 11/24 확인 30 FPS), 손은 50cm 이상.
 - 패키지 추가 시 `requirements.txt`에 버전 고정. pandas는 2.3.3 유지 (스마트 앱 컨트롤이 3.x 차단).
 - mediapipe 1.2.2 = Tasks API (`mp.solutions` 없음). 모델 `assets/hand_landmarker.task`.
 - 가짜 데이터(`data/synthetic`, `results/synthetic`) 숫자는 보고서에 쓰지 말 것.
